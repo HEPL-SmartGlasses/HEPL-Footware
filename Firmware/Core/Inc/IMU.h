@@ -8,6 +8,9 @@
 #ifndef INC_IMU_H_
 #define INC_IMU_H_
 
+#include "stm32f7xx_hal.h"
+#include "assert.h"
+
 // Register Address Map
 #define FUNC_CFG_ACCESS 			0x01 	// R/W Embedded functions config register - Default 0x00
 #define SENSOR_SYNC_TIME_FRAME		0x04 	// R/W Sensor sync config register - Default 0x00
@@ -109,17 +112,72 @@
 #define Z_OFS_USR					0x75	// R/W Accelerometer user Z offset correction - Default 0x00
 // END Register Address Map
 
+// Constants
+#define WHO_I_AM_ID 				0x6A
+#define LA_FS						4		// Linear Acceleration Full-Scale
+#define SPI_TIMEOUT					0x01
+#define BUFFER_SIZE					10
+
+volatile struct IMU_config {
+	SPI_HandleTypeDef* hspi; // SPI bus
+
+	// Accelerometer Offsets
+	int8_t X_offset = 0;
+	int8_t Y_offset = 0;
+	int8_t Z_offset = 0;
+};
 
 /*
- *  Initialize IMU
+ *  @brief Initialize IMU
  *
- *	hspi: SPI bus of IMU
+ *	@param hspi: SPI bus of IMU
  *
  *	https://www.st.com/content/ccc/resource/technical/document/datasheet/76/27/cf/88/c5/03/42/6b/DM00218116.pdf/files/DM00218116.pdf/jcr:content/translations/en.DM00218116.pdf
  *
  */
-void initIMU(SPI_HandleTypeDef* hspi);
+void IMU_init(SPI_HandleTypeDef* hspi);
 
+/*
+ *  @brief Converts acceleration reading to mg
+ *
+ *  @param 16-bit 2's complement reading
+ *  @retval Acceleration in mg
+ */
+float IMU_convertToMG(int16_t reading);
+
+/*
+ *  @brief Update IMU offset values
+ */
+void IMU_updateOffsetCorrections(void);
+
+/*
+ *  @brief Read IMU register(s) over SPI
+ *
+ *	@param reg_addr: Address to read from (or starting address if consecutive)
+ *	@param rx: Return buffer for read data
+ *	@param num_bytes: Number of bytes to read
+ *
+ */
+HAL_StatusTypeDef IMU_readRegister(uint8_t reg_addr, uint8_t* rx_buf, int num_bytes);
+
+/*
+ *  @brief Write IMU register(s) over SPI
+ *
+ *	@param tx: Buffer for data to write, reg_addr goes at index 0
+ *	@param num_bytes: Number of bytes to write (excluding reg_addr)
+ *
+ */
+HAL_StatusTypeDef IMU_writeRegister(uint8_t* tx_buf, int num_bytes);
+
+/*
+ *  @brief Enable IMU CS pin
+ */
+void IMU_chipSelect(void);
+
+/*
+ *  @brief Disable IMU CS pin
+ */
+void IMU_chipRelease(void);
 
 
 #endif /* INC_IMU_H_ */
