@@ -118,14 +118,14 @@
 #define SPI_TIMEOUT					0x01
 #define BUFFER_SIZE					10
 
-volatile struct IMU_config {
+typedef struct {
 	SPI_HandleTypeDef* hspi; // SPI bus
 
 	// Accelerometer Offsets
-	int8_t X_offset = 0;
-	int8_t Y_offset = 0;
-	int8_t Z_offset = 0;
-};
+	int8_t X_offset;
+	int8_t Y_offset;
+	int8_t Z_offset;
+} IMU;
 
 /*
  *  @brief Initialize IMU
@@ -135,7 +135,7 @@ volatile struct IMU_config {
  *	https://www.st.com/content/ccc/resource/technical/document/datasheet/76/27/cf/88/c5/03/42/6b/DM00218116.pdf/files/DM00218116.pdf/jcr:content/translations/en.DM00218116.pdf
  *
  */
-void IMU_init(SPI_HandleTypeDef* hspi);
+void IMU_init(SPI_HandleTypeDef* hspi, IMU IMU);
 
 /*
  *  @brief Converts acceleration reading to mg
@@ -143,12 +143,12 @@ void IMU_init(SPI_HandleTypeDef* hspi);
  *  @param 16-bit 2's complement reading
  *  @retval Acceleration in mg
  */
-float IMU_convertToMG(int16_t reading);
+float IMU_convertToMilliGs(int16_t reading);
 
 /*
  *  @brief Update IMU offset values
  */
-void IMU_updateOffsetCorrections(void);
+void IMU_updateOffsetCorrections(IMU IMU);
 
 /*
  *  @brief Read IMU register(s) over SPI
@@ -158,7 +158,7 @@ void IMU_updateOffsetCorrections(void);
  *	@param num_bytes: Number of bytes to read
  *
  */
-HAL_StatusTypeDef IMU_readRegister(uint8_t reg_addr, uint8_t* rx_buf, int num_bytes);
+HAL_StatusTypeDef IMU_readRegister(IMU IMU, uint8_t reg_addr, uint8_t* rx_buf, int num_bytes);
 
 /*
  *  @brief Write IMU register(s) over SPI
@@ -167,7 +167,7 @@ HAL_StatusTypeDef IMU_readRegister(uint8_t reg_addr, uint8_t* rx_buf, int num_by
  *	@param num_bytes: Number of bytes to write (excluding reg_addr)
  *
  */
-HAL_StatusTypeDef IMU_writeRegister(uint8_t* tx_buf, int num_bytes);
+HAL_StatusTypeDef IMU_writeRegister(IMU IMU, uint8_t* tx_buf, int num_bytes);
 
 /*
  *  @brief Enable IMU CS pin

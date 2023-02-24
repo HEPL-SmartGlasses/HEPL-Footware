@@ -62,7 +62,7 @@ main-build: HEPL-Footware.elf secondary-outputs
 
 # Tool invocations
 HEPL-Footware.elf: $(OBJS) $(USER_OBJS) C:\Users\evanm\Documents\Michigan\eecs373\Project\HEPL-Footware\Firmware\STM32F730R8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "HEPL-Footware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\evanm\Documents\Michigan\eecs373\Project\HEPL-Footware\Firmware\STM32F730R8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HEPL-Footware.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "HEPL-Footware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\evanm\Documents\Michigan\eecs373\Project\HEPL-Footware\Firmware\STM32F730R8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HEPL-Footware.map" -Wl,--gc-sections -static -L../Drivers/CMSIS/Lib/GCC --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

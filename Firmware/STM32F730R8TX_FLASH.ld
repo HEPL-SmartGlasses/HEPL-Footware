@@ -47,6 +47,8 @@ MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 256K
   FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 64K
+  DMA_RX_XL1_BUFFER	(xrw)	: ORIGIN = 0x2FFFB000,	LENGTH = 4K
+  DMA_RX_XL2_BUFFER	(xrw)	: ORIGIN = 0x2FFFC000,	LENGTH = 4K
 }
 
 /* Sections */
@@ -146,6 +148,18 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
 
   } >RAM AT> FLASH
+  
+  /* Section for DMA RX buffer for Accelerometer 2 */
+  .dma_rx_xl1_buffer :
+  {
+    *(.dma_rx_xl1_buffer)
+  } >DMA_RX_XL1_BUFFER
+  
+  /* Section for DMA RX buffer for Accelerometer 2 */
+  .dma_rx_xl2_buffer :
+  {
+    *(.dma_rx_xl2_buffer)
+  } >DMA_RX_XL2_BUFFER
 
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);
