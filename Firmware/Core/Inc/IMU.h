@@ -125,6 +125,8 @@ typedef struct {
 	int8_t X_offset;
 	int8_t Y_offset;
 	int8_t Z_offset;
+
+	// Chip Select Function Ptr
 } IMU;
 
 /*
