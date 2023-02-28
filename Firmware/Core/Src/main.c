@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "IMU.h"
 #include "stm32f7xx_hal.h"
+#include "processing.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,6 +52,11 @@ DMA_HandleTypeDef hdma_spi1_rx;
 volatile IMU IMU0;
 volatile IMU IMU1;
 
+volatile SensorData IMU0_data;
+volatile SensorData IMU1_data;
+
+volatile float timeDelta = 0.00480769230769230769230769230769; // Default to 1/208Hz (IMU sample rate)
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -66,12 +72,6 @@ static void MX_SPI2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-void Step_Detection_INT_Handler(void) {
-	// Initiate DMA transfers
-	DMA_StartTransfer();
-	DMA_StartTransfer();
-}
 
 /* USER CODE END 0 */
 
@@ -101,9 +101,6 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  //TODO Configure DMA buffer region as non-cacheable
-  // 0x2FFF B000 rn region 0
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -120,8 +117,10 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
-  IMU_init(&hspi1, IMU0);
-  IMU_init(&hspi1, IMU1);
+  IMU_init(&hspi1, &IMU0);
+  IMU_init(&hspi1, &IMU1);
+
+  init_processing();
 
   /* USER CODE END 2 */
 
@@ -130,8 +129,21 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
+	  if (DRDY_flag) {
+
+		  IMU_readSensorData(&IMU0, &IMU0_data);
+		  IMU_readSensorData(&IMU1, &IMU1_data);
+
+		  calculateAvgAngularRate(&IMU0_data, &IMU1_data);
+		  calculateRotationMatrix(timeDelta);
+
+
+	  }
+
+	  if (periodic_tx_flag) {
+
+	  }
   }
   /* USER CODE END 3 */
 }

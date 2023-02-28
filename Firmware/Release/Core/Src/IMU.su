@@ -1,7 +1,9 @@
-IMU.c:51:7:IMU_convertToMilliGs	0	static
-IMU.c:96:6:IMU_chipSelect	8	static
-IMU.c:68:19:IMU_readRegister	16	static,ignoring_inline_asm
-IMU.c:56:6:IMU_updateOffsetCorrections	16	static,ignoring_inline_asm
-IMU.c:84:19:IMU_writeRegister	16	static,ignoring_inline_asm
-IMU.c:10:6:IMU_init	16	static,ignoring_inline_asm
-IMU.c:100:6:IMU_chipRelease	8	static
+IMU.c:43:7:IMU_convertAccel	0	static
+IMU.c:50:7:IMU_convertGyro	0	static
+IMU.c:107:6:IMU_chipSelect	8	static
+IMU.c:71:19:IMU_readRegister	8	static,ignoring_inline_asm
+IMU.c:57:6:IMU_readSensorData	8	static,ignoring_inline_asm
+IMU.c:91:19:IMU_writeRegister	8	static,ignoring_inline_asm
+IMU.c:10:6:IMU_init	8	static,ignoring_inline_asm
+IMU.c:111:6:IMU_chipRelease	8	static
+IMU.c:115:6:IMU_updateOffsetCorrections	8	static,ignoring_inline_asm

@@ -114,9 +114,12 @@
 
 // Constants
 #define WHO_I_AM_ID 				0x6A
-#define LA_FS						4		// Linear Acceleration Full-Scale
+#define FULLSCALE_ACCEL				8		// Linear Acceleration Full-Scale (+/- 8g)
+#define XL_SCALE_FACTOR				(float)0.000244140625	// Full-Scale Acceleration / Max LSB value (32768)
+#define FULLSCALE_GYRO				1000	// Angular Rate Full-Scale (1000 deg/s)
+#define GYRO_SCALE_FACTOR			(float)0.030517578125	// Full-Scale Angular Rate / Max LSB value (32768)
 #define SPI_TIMEOUT					0x01
-#define BUFFER_SIZE					10
+#define BUFFER_SIZE					12
 
 typedef struct {
 	SPI_HandleTypeDef* hspi; // SPI bus
@@ -127,7 +130,20 @@ typedef struct {
 	int8_t Z_offset;
 
 	// Chip Select Function Ptr
+
 } IMU;
+
+typedef struct {
+	// Accel Data in Gs
+	float XL_X;
+	float XL_Y;
+	float XL_Z;
+
+	// Gyro Data in Deg/sec
+	float G_X;
+	float G_Y;
+	float G_Z;
+} SensorData;
 
 /*
  *  @brief Initialize IMU
@@ -137,20 +153,31 @@ typedef struct {
  *	https://www.st.com/content/ccc/resource/technical/document/datasheet/76/27/cf/88/c5/03/42/6b/DM00218116.pdf/files/DM00218116.pdf/jcr:content/translations/en.DM00218116.pdf
  *
  */
-void IMU_init(SPI_HandleTypeDef* hspi, IMU IMU);
+void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU);
 
 /*
- *  @brief Converts acceleration reading to mg
+ *  @brief Read Gryo and Accel data from IMU
  *
- *  @param 16-bit 2's complement reading
- *  @retval Acceleration in mg
+ *  @param IMU: IMU struct
+ *  @param data: struct to store sensor data
  */
-float IMU_convertToMilliGs(int16_t reading);
+void IMU_readSensorData(IMU* IMU, SensorData* data);
 
 /*
- *  @brief Update IMU offset values
+ *  @brief Converts acceleration reading to g
+ *
+ *  @param 16-bit 2's complement reading, split into 2 bytes
+ *  @retval Acceleration in g
  */
-void IMU_updateOffsetCorrections(IMU IMU);
+float IMU_convertAccel(uint8_t H_byte, uint8_t L_byte);
+
+/*
+ *  @brief Converts angular velocity reading to deg/s
+ *
+ *  @param 16-bit 2's complement reading, split into 2 bytes
+ *  @retval Angular Velocity in deg/s
+ */
+float IMU_convertGyro(uint8_t H_byte, uint8_t L_byte);
 
 /*
  *  @brief Read IMU register(s) over SPI
@@ -160,7 +187,7 @@ void IMU_updateOffsetCorrections(IMU IMU);
  *	@param num_bytes: Number of bytes to read
  *
  */
-HAL_StatusTypeDef IMU_readRegister(IMU IMU, uint8_t reg_addr, uint8_t* rx_buf, int num_bytes);
+HAL_StatusTypeDef IMU_readRegister(IMU* IMU, uint8_t reg_addr, uint8_t* rx_buf, int num_bytes);
 
 /*
  *  @brief Write IMU register(s) over SPI
@@ -169,7 +196,7 @@ HAL_StatusTypeDef IMU_readRegister(IMU IMU, uint8_t reg_addr, uint8_t* rx_buf, i
  *	@param num_bytes: Number of bytes to write (excluding reg_addr)
  *
  */
-HAL_StatusTypeDef IMU_writeRegister(IMU IMU, uint8_t* tx_buf, int num_bytes);
+HAL_StatusTypeDef IMU_writeRegister(IMU* IMU, uint8_t* tx_buf, int num_bytes);
 
 /*
  *  @brief Enable IMU CS pin
@@ -181,5 +208,9 @@ void IMU_chipSelect(void);
  */
 void IMU_chipRelease(void);
 
+/*
+ *  @brief Update IMU offset values
+ */
+void IMU_updateOffsetCorrections(IMU* IMU);
 
 #endif /* INC_IMU_H_ */
