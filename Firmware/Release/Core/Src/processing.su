@@ -1,0 +1,3 @@
+../Core/Src/processing.c:63:6:init_processing	8	static
+../Core/Src/processing.c:83:6:calculateAvgAngularRate	0	static
+../Core/Src/processing.c:89:6:calculateRotationMatrix	0	static

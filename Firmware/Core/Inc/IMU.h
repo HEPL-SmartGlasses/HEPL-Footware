@@ -8,7 +8,7 @@
 #ifndef INC_IMU_H_
 #define INC_IMU_H_
 
-#include "stm32f7xx_hal.h"
+#include "stm32l4xx_hal.h"
 #include "assert.h"
 
 // Register Address Map
