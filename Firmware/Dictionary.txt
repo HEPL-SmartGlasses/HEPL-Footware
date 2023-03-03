@@ -3,3 +3,6 @@ init
 nav
 avg
 radians
+covariance
+deg
+temp

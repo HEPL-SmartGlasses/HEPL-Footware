@@ -1,3 +1,6 @@
-../Core/Src/processing.c:63:6:init_processing	8	static
-../Core/Src/processing.c:83:6:calculateAvgAngularRate	0	static
-../Core/Src/processing.c:89:6:calculateRotationMatrix	0	static
+../Core/Src/processing.c:93:6:init_processing	16	static
+../Core/Src/processing.c:165:6:calculateAvgAngularRate	8	static
+../Core/Src/processing.c:175:6:calculateRotationMatrix	32	static
+../Core/Src/processing.c:196:6:calculateStateEstimation	0	static
+../Core/Src/processing.c:200:6:updateFMatrix	0	static
+../Core/Src/processing.c:144:6:calculateCorrectedState	16	static

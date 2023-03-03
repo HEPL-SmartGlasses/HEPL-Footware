@@ -58,7 +58,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Include/dsp/filtering_functions.h \
  ../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Include/dsp/support_functions.h \
  ../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Include/dsp/quaternion_math_functions.h \
- ../Core/Inc/IMU.h
+ ../Core/Inc/IMU.h ../Core/Inc/block_matrix_functions.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -121,3 +121,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Include/dsp/support_functions.h:
 ../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Include/dsp/quaternion_math_functions.h:
 ../Core/Inc/IMU.h:
+../Core/Inc/block_matrix_functions.h:

@@ -120,8 +120,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  if (DRDY_flag) {
 
+		  // Sample IMU Data
 		  IMU_readSensorData(&IMU0, &IMU0_data);
 		  IMU_readSensorData(&IMU1, &IMU1_data);
+
+		  calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
 
 		  calculateAvgAngularRate(&IMU0_data, &IMU1_data);
 		  calculateRotationMatrix(timeDelta);
