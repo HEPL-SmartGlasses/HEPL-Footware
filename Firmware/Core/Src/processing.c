@@ -220,24 +220,131 @@ float K_stance_f32[144] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 }; // Kalman Gain K_2, stance phase, init to all zeros
 
+float R_swing_f32[36] = { // (6x6)
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+}; // Observation noise covariance, swing phase, init to // TODO fill this in
+
+float R_stance_f32[144] = { // (12x12)
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+}; // Observation noise covariance, stance phase, init to // TODO fill this in
+
+float P_prev_f32[] = { // (12x12)
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+}; // A posteriori covariance, k-1, init to zeros
+
+float P_curr_f32[] = { // (12x12)
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+}; // A posteriori covariance, k, init to zeros
+
+float P_minus_f32[] = { // (12x12)
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+}; // A priori covariance, k, init to zeros
+
+float Q_prev_f32[] = { // (12x12)
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+}; // Process noise covariance, k-1, init to // TODO fill this in
+
 /*
  *  Matrix instances
  */
 arm_matrix_instance_f32 m_b0; 			// Relative IMU positions, frame b0
 arm_matrix_instance_f32 g_n;			// Gravitation vector, frame n
-arm_matrix_instance_f32 w_avg_b0;		// Average angular rate vector, frame b0
+arm_matrix_instance_f32 w_avg_b0;		// Average angular rate vector, frame b0, k
 arm_matrix_instance_f32 rotation_b0_n; 	// Rotation matrix, frame b0 to frame n
 arm_matrix_instance_f32 x_prev;			// State variable, k-1
 arm_matrix_instance_f32 x_curr;			// State variable, k
 arm_matrix_instance_f32 F_matrix;		// State transition matrix
 arm_matrix_instance_f32 B_matrix;		// Control matrix
-arm_matrix_instance_f32 u_curr;			// Input vector, frame n
+arm_matrix_instance_f32 u_curr;			// Input vector, frame n, k
 arm_matrix_instance_f32 H_swing;		// Observation matrix, swing phase
 arm_matrix_instance_f32 H_stance;		// Observation matrix, stance phase
-arm_matrix_instance_f32 Z_swing;		// Observation vector, swing phase
-arm_matrix_instance_f32 Z_stance;		// Observation vector, stance phase
-arm_matrix_instance_f32 K_swing;		// Kalman Gain, swing phase
-arm_matrix_instance_f32 K_stance;		// Kalman Gain, stance phase
+arm_matrix_instance_f32 Z_swing;		// Observation vector, swing phase, k
+arm_matrix_instance_f32 Z_stance;		// Observation vector, stance phase, k
+arm_matrix_instance_f32 K_swing;		// Kalman Gain, swing phase, k
+arm_matrix_instance_f32 K_stance;		// Kalman Gain, stance phase, k
+arm_matrix_instance_f32 R_swing;		// Observation noise covariance, swing phase, k
+arm_matrix_instance_f32 R_stance;		// Observation noise covariance, stance phase, k
+arm_matrix_instance_f32 P_prev;			// A posteriori covariance, k-1
+arm_matrix_instance_f32 P_curr;			// A posteriori covariance, k
+arm_matrix_instance_f32 P_minus;		// A priori covariance, k
+arm_matrix_instance_f32 Q_prev;			// Process noise covariance, k-1
+
 
 
 void init_processing(void) {
@@ -322,12 +429,42 @@ void init_processing(void) {
 	numCols = 12;
 	arm_mat_init_f32(&K_stance, numRows, numCols, K_stance_f32);
 
+	// Observation noise covariance, swing phase
+	numRows = 6;
+	numCols = 6;
+	arm_mat_init_f32(&R_swing, numRows, numCols, R_swing_f32);
+
+	// Observation noise covariance, stance phase
+	numRows = 12;
+	numCols = 12;
+	arm_mat_init_f32(&R_stance, numRows, numCols, R_stance_f32);
+
+	// k-1 a posteriori covariance
+	numRows = 12;
+	numCols = 12;
+	arm_mat_init_f32(&P_prev, numRows, numCols, P_prev_f32);
+
+	// k a posteriori covariance
+	numRows = 12;
+	numCols = 12;
+	arm_mat_init_f32(&P_curr, numRows, numCols, P_curr_f32);
+
+	// k a priori covariance
+	numRows = 12;
+	numCols = 12;
+	arm_mat_init_f32(&P_minus, numRows, numCols, P_minus_f32);
+
+	// k-1 Process noise covariance
+	numRows = 12;
+	numCols = 12;
+	arm_mat_init_f32(&Q_prev, numRows, numCols, Q_prev_f32);
+
 }
 
 void calculateCorrectedState(
 		SensorData* IMU0_data,
 		SensorData* IMU1_data,
-		float timeDelta) {
+		float timeDelta) { // TODO Verify this
 
 	calculateAvgAngularRate(IMU0_data, IMU1_data); // w_avg_b0
 
@@ -339,9 +476,10 @@ void calculateCorrectedState(
 
 	updateUVector(IMU0_data, IMU1_data);	// Update u_curr with IMU data
 
-	calculateStateEstimation();	// x(k) = F*x(k-1) + B*u(k) // TODO Make sure these multiplications happen as expected, it looks fine in a test I ran in VS
+	calculateStateEstimation();	// x(k) = F*x(k-1) + B*u(k)
 
-	// calculate state estimation error covariance (P-) // TODO need to tune process noise covariance matrix Q(k-1)
+	calculateStateEstimationErrorCovariance();	// P-(k) = F*P(k-1)*F^T + Q(k-1)
+	// TODO need to tune process noise covariance matrix Q(k-1)
 
 	// Determine Swing or Stance Phase
 
@@ -372,15 +510,15 @@ void calculateCorrectedState(
 
 	calculateOptimalStateEstimation(&Ki, &Zi, &Hi);	// x(k) <-- x_best(k) = x(k) + Ki(k)*(Zi(k) - Hi*x(k))
 
-	// calculate optimal estimation error covariance (P(k))
+	calculateOptimalEstimationErrorCovariance(&Ki, &Hi);	// P(k) = (I - Ki(k)*Hi)*P-(k)
 
-	updatePrevMatrices();	// update x_prev, P_prev, (Q_prev?)
+	updatePreviousMatrices();	// update x_prev, P_prev, (Q_prev?) // TODO Add Q_prev to this?
 
 }
 
 void calculateAvgAngularRate(
 		SensorData* IMU0_data,
-		SensorData* IMU1_data) {
+		SensorData* IMU1_data) { // TODO Verify this
 
 	w_avg_b0_f32[0] = (IMU0_data->G_X + IMU1_data->G_X) / 2;
 	w_avg_b0_f32[1] = (IMU0_data->G_Y + IMU1_data->G_Y) / 2;
@@ -392,7 +530,7 @@ void calculateAvgAngularRate(
 }
 
 void calculateRotationMatrix(
-		float timeDelta) {
+		float timeDelta) { // TODO Verify this
 
 	// Determine change in rotation angle / 2 (units of radians)
 	float rotation_angle_div_2 = w_avg_b0_mag * timeDelta * deg2rad / 2;
@@ -414,14 +552,23 @@ void calculateRotationMatrix(
 	arm_quaternion2rotation_f32(q_f32, rotation_b0_n_f32, 1);
 }
 
-void calculateStateEstimation() {
+void calculateStateEstimation(void) { // TODO Verify this
+
+	/*
+	 *  Define Temporary Objects
+	 */
+
 	float temp1_f32[12];
 	arm_matrix_instance_f32 temp1;
-	arm_mat_init_f32(&temp1, 12, 1, temp1_f32); // temp for first term of sum
+	arm_mat_init_f32(&temp1, 12, 1, temp1_f32); // temp for first term of sum, 12x1
 
 	float temp2_f32[12];
 	arm_matrix_instance_f32 temp2;
-	arm_mat_init_f32(&temp2, 12, 1, temp2_f32); // temp for second term of sum
+	arm_mat_init_f32(&temp2, 12, 1, temp2_f32); // temp for second term of sum, 12x1
+
+	/*
+	 *  Calculation Section
+	 */
 
 	arm_mat_mult_f32(&F_matrix, &x_prev, &temp1); // F*x(k-1) --> (12x12) * (12x1)
 
@@ -430,10 +577,33 @@ void calculateStateEstimation() {
 	arm_mat_add_f32(&temp1, &temp2, &x_curr); // x(k) = F*x(k-1) + B*u(k)
 }
 
+void calculateStateEstimationErrorCovariance(void) {
+
+	/*
+	 *  Define Temporary Objects
+	 */
+
+	float temp12x12_f32[12];
+	arm_matrix_instance_f32 temp12x12;
+	arm_mat_init_f32(&temp12x12, 12, 12, temp12x12_f32); // Temp 12x12 matrix
+	arm_mat_trans_f32(&F_matrix, &temp12x12);	// Initialize to transpose of F
+
+	/*
+	 *  Calculation Section
+	 */
+
+	arm_mat_mult_f32(&P_prev, &temp12x12, &temp12x12);	// P(k-1)*F^T --> (12x12) * (12x12)
+
+	arm_mat_mult_f32(&F_matrix, &temp12x12, &temp12x12);	// F*(P(k-1)*F^T) --> (12x12) * (12x12)
+
+	arm_mat_add_f32(&temp12x12, &Q_prev, &P_minus);	// P-(k) = (F*P(k-1)*F^T) + Q(k-1)
+
+}
+
 void calculateGainMatrix(
 		arm_matrix_instance_f32* Ki, /*(12xN)*/
 		arm_matrix_instance_f32* Hi, /*(Nx12)*/
-		arm_matrix_instance_f32* Ri /*(NxN)*/) {
+		arm_matrix_instance_f32* Ri /*(NxN)*/) { // TODO Verify this
 
 	uint16_t N = Hi->numRows;
 
@@ -464,6 +634,10 @@ void calculateGainMatrix(
 
 	arm_mat_mult_f32(&temp12xN, &tempNxN, Ki);	// Ki(k) = P-(k)*Hi^T * (Hi*P-(k)*Hi^T + Ri(k))^-1 --> (12xN) * (NxN)
 
+	/*
+	 *  Cleanup Section
+	 */
+
 	// Free malloc'd memory
 	free(temp12xN_f32);
 	free(tempNxN_f32);
@@ -472,7 +646,7 @@ void calculateGainMatrix(
 void calculateOptimalStateEstimation(
 		arm_matrix_instance_f32* Ki, /*(12xN)*/
 		arm_matrix_instance_f32* Zi, /*(Nx1)*/
-		arm_matrix_instance_f32* Hi /*(Nx12)*/) {
+		arm_matrix_instance_f32* Hi /*(Nx12)*/) { // TODO Verify this
 
 	uint16_t N = Zi->numRows;
 
@@ -503,12 +677,60 @@ void calculateOptimalStateEstimation(
 	// Add weighted correction factor
 	arm_mat_add_f32(&x_curr, &temp12x1, &x_curr); // x(k) <= x_best(k) = x(k) * Ki(k) * (Zi(k) - Hi*x(k))
 
+	/*
+	 *  Cleanup Section
+	 */
+
 	// Free malloc'd memory
 	free(tempNx1_f32);
 }
 
+void calculateOptimalEstimationErrorCovariance(
+		arm_matrix_instance_f32* Ki, /*(12xN)*/
+		arm_matrix_instance_f32* Hi /*(Nx12)*/) { // TODO Verify this
+
+	/*
+	 *  Define Temporary Objects
+	 */
+
+	float Identity12x12_f32[144] = {
+			1,0,0,	0,0,0,	0,0,0,	0,0,0,
+			0,1,0,	0,0,0,	0,0,0,	0,0,0,
+			0,0,1,	0,0,0,	0,0,0,	0,0,0,
+
+			0,0,0,	1,0,0,	0,0,0,	0,0,0,
+			0,0,0,	0,1,0,	0,0,0,	0,0,0,
+			0,0,0,	0,0,1,	0,0,0,	0,0,0,
+
+			0,0,0,	0,0,0,	1,0,0,	0,0,0,
+			0,0,0,	0,0,0,	0,1,0,	0,0,0,
+			0,0,0,	0,0,0,	0,0,1,	0,0,0,
+
+			0,0,0,	0,0,0,	0,0,0,	1,0,0,
+			0,0,0,	0,0,0,	0,0,0,	0,1,0,
+			0,0,0,	0,0,0,	0,0,0,	0,0,1,
+	};
+	arm_matrix_instance_f32 Identity12x12;
+	arm_mat_init_f32(&Identity12x12, 12, 12, Identity12x12_f32); // 12x12 Identity matrix
+
+	float temp12x12_f32[144];
+	arm_matrix_instance_f32 temp12x12;
+	arm_mat_init_f32(&temp12x12, 12, 12, temp12x12_f32); // Temp 12x12 matrix
+
+	/*
+	 *  Calculation Section
+	 */
+
+	arm_mat_mult_f32(Ki, Hi, &temp12x12);	// Ki(k)*Hi --> (12xN) * (Nx12)
+
+	arm_mat_sub_f32(&Identity12x12, &temp12x12, &temp12x12); // I - (Ki(k)*Hi)
+
+	arm_mat_mult_f32(&temp12x12, &P_minus, &P_curr);	// P(k) = (I - Ki(k)*Hi)*P-(k) --> (12x12) * (12x12)
+
+}
+
 void updateFMatrix(
-		float timeDelta) {
+		float timeDelta) { // TODO Verify this
 
 	int i;
 	for(i = 0; i < 6; ++i) { // Update specific indices of F matrix
@@ -517,7 +739,7 @@ void updateFMatrix(
 }
 
 void updateBMatrix(
-		float timeDelta) {
+		float timeDelta) { // TODO Verify this
 
 	float dt2 = timeDelta * timeDelta / 2;
 
@@ -533,7 +755,7 @@ void updateBMatrix(
 
 void updateUVector(
 		SensorData* IMU0_data,
-		SensorData* IMU1_data) {
+		SensorData* IMU1_data) { // TODO Verify this
 
 	/*
 	 *  Define Temporary Objects
@@ -579,7 +801,7 @@ void updateUVector(
 }
 
 void updateZiVector(
-		arm_matrix_instance_f32* Zi) {
+		arm_matrix_instance_f32* Zi) { // TODO Verify this
 
 	/*
 	 *  Define Temporary Objects
@@ -620,7 +842,7 @@ void updateZiVector(
 	Zi->pData[2] = tempRw_f32[2];
 }
 
-void updatePrevMatrices(void) {
+void updatePreviousMatrices(void) { // TODO Verify this
 	int i;
 	int j;
 	for (i = 0; i < x_curr.numRows; ++i) {
@@ -629,7 +851,7 @@ void updatePrevMatrices(void) {
 
 	for (i = 0; i < P_prev.numRows; ++i) {
 		for (j = 0; j < P_prev.numCols; ++j) {
-			P_prev.pData[i][j] = P_curr.pData[i][j];
+			P_prev.pData[(i*P_prev.numCols) + j] = P_curr.pData[(i*P_curr.numCols) + j];
 		}
 	}
 
@@ -639,7 +861,7 @@ void updatePrevMatrices(void) {
 void cross_product(
 		arm_matrix_instance_f32* a,
 		arm_matrix_instance_f32* b,
-		arm_matrix_instance_f32* c) {
+		arm_matrix_instance_f32* c) { // TODO Verify this
 
 	// Make copy to avoid using overwritten data in calculations (ex. if a = c)
 	float aData[3] = {a->pData[0], a->pData[1], a->pData[2]};
@@ -649,9 +871,3 @@ void cross_product(
 	c->pData[1] = aData[2] * bData[0] - aData[0] * bData[2];
 	c->pData[2] = aData[0] * bData[1] - aData[1] * bData[0];
 }
-
-
-
-
-
-

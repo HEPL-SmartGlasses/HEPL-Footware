@@ -105,11 +105,11 @@ HAL_StatusTypeDef IMU_writeRegister(IMU* IMU, uint8_t* tx_buf, int num_bytes) {
 }
 
 void IMU_chipSelect(void) {
-	assert(0);
+	assert(0); // TODO write this
 }
 
 void IMU_chipRelease(void) {
-	assert(0);
+	assert(0); // TODO write this
 }
 
 void IMU_updateOffsetCorrections(IMU* IMU) {

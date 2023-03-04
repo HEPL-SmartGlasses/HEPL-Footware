@@ -126,13 +126,13 @@ int main(void)
 
 		  calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
 
-		  calculateAvgAngularRate(&IMU0_data, &IMU1_data);
-		  calculateRotationMatrix(timeDelta);
-
-
 	  }
 
 	  if (periodic_tx_flag) {
+
+		  // TODO Getter function from processing.h
+
+		  // TODO XBee TX function
 
 	  }
   }

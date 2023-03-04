@@ -1,0 +1,15 @@
+../Core/Src/processing.c:350:6:init_processing	8	static
+../Core/Src/processing.c:519:6:calculateAvgAngularRate	8	static
+../Core/Src/processing.c:532:6:calculateRotationMatrix	32	static
+../Core/Src/processing.c:555:6:calculateStateEstimation	120	static
+../Core/Src/processing.c:580:6:calculateStateEstimationErrorCovariance	64	static
+../Core/Src/processing.c:603:6:calculateGainMatrix	48	static
+../Core/Src/processing.c:646:6:calculateOptimalStateEstimation	88	static
+../Core/Src/processing.c:688:6:calculateOptimalEstimationErrorCovariance	1184	static
+../Core/Src/processing.c:732:6:updateFMatrix	0	static
+../Core/Src/processing.c:741:6:updateBMatrix	0	static
+../Core/Src/processing.c:756:6:updateUVector	48	static
+../Core/Src/processing.c:845:6:updatePreviousMatrices	20	static
+../Core/Src/processing.c:861:6:cross_product	0	static
+../Core/Src/processing.c:803:6:updateZiVector	56	static
+../Core/Src/processing.c:464:6:calculateCorrectedState	64	static

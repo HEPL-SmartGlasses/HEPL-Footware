@@ -41,20 +41,30 @@ void calculateRotationMatrix(
 		float timeDelta);
 
 /*
- *  Calculate state estimation (x) using the state equation
+ *  Calculate state estimation using the state equation
  *  	x(k) = F*x(k-1) + B*u(k)
+ *  		x(k) is the current state estimation
  *  		F is the state transition matrix
- *  		x(k-1) is the previous state
+ *  		x(k-1) is the previous state estimation
  *  		B is the control matrix to transform IMU data
  *  		u(k) is the IMU data (Rotation_board_to_nav * accel_board(k) - g_nav) of both sensors
  */
-void calculateStateEstimation();
+void calculateStateEstimation(void);
+
+/*
+ *  Calculate state estimation error covariance matrix ("A Priori Covariance")
+ *  	P-(k) = F*P(k-1)*F^T + Q(k-1)
+ *  		P-(k) is the current state estimation error covariance matrix (a priori covariance)
+ *  		F is the state transition matrix
+ *  		Q(k-1) is the previous process noise covariance matrix
+ */
+void calculateStateEstimationErrorCovariance(void);
 
 /*
  *  Calculate Kalman Gain
  *  	Ki(k) = P-(k)*Hi^T * (Hi*P-(k)*Hi^T + Ri(k))^-1
- *  		Ki(k) is the current gain of the Kalman Gain of the current phase
- *  		P-(k) is the current state estimation error covariance matrix
+ *  		Ki(k) is the current Kalman Gain of the current phase for the correction factor
+ *  		P-(k) is the current state estimation error covariance matrix (a priori covariance)
  *  		Hi is the observation matrix of the current phase
  *  		Ri(k) is the current observation noise covariance matrix of the current phase
  */
@@ -66,8 +76,8 @@ void calculateGainMatrix(
 /*
  *  Calculate optimal state estimation (x_best) using the correction equation
  *  	x(k) <-- x_best(k) = x(k) + Ki(k)*(Zi(k) - Hi*x(k))
- *  		x(k) is estimated current state
- *  		Ki(k) is the calculated current gain for the correction factor
+ *  		x(k) is estimated current state, x_best represents the optimal (corrected) estimation
+ *  		Ki(k) is the current Kalman Gain of the current phase for the correction factor
  *  		Zi(k) is the observation vector of the current phase
  *  		Hi is the observation matrix of the current phase
  *
@@ -80,6 +90,19 @@ void calculateGainMatrix(
 void calculateOptimalStateEstimation(
 		arm_matrix_instance_f32* Ki, /*(12xN)*/
 		arm_matrix_instance_f32* Zi, /*(Nx1)*/
+		arm_matrix_instance_f32* Hi /*(Nx12)*/);
+
+/*
+ *  Calculate optimal estimation error covariance matrix ("A Posteriori covariance")
+ *  	P(k) = (I - Ki(k)*Hi)*P-(k)
+ *  		P(k) is the current optimal estimation error covariance matrix (a posteriori covariance)
+ *  		I is the 12x12 Identity matrix
+ *  		Ki(k) is the current Kalman Gain of the current phase for the correction factor
+ *  		Hi is the observation matrix of the current phase
+ *  		P-(k) is the current state estimation error covariance matrix (a priori covariance)
+ */
+void calculateOptimalEstimationErrorCovariance(
+		arm_matrix_instance_f32* Ki, /*(12xN)*/
 		arm_matrix_instance_f32* Hi /*(Nx12)*/);
 
 /*
@@ -110,7 +133,7 @@ void updateZiVector(
 /*
  *  Update x(k-1), P(k-1), (Q(k-1)?)
  */
-void updatePrevMatrices(void);
+void updatePreviousMatrices(void);
 
 /*
  *  Do cross product of two inputed vectors
