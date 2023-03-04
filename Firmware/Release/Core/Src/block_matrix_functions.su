@@ -1,2 +1,0 @@
-../Core/Src/block_matrix_functions.c:23:6:block_matrix_init_f32	0	static
-../Core/Src/block_matrix_functions.c:48:6:block_matrix_mult_f32	80	dynamic

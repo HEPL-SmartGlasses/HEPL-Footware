@@ -6,44 +6,47 @@
  */
 
 #include "processing.h"
+#include "stdlib.h"
 
-float w_avg_mag;
+float w_avg_b0_mag;
+
+enum PHASE {SWING, STANCE};
 
 /*
  *  Matrix data
  */
-float m_b0_f32[3] = {
+float m_b0_f32[3] = { // (3x1)
 		0.01, //TODO change to reflect actual distance between sensors
 		0.01,
 		0,
 }; // Relative position of IMUs in board frame (b0, so relative to IMU0), unit (m)
 
-float g_n_f32[3] = {
+float g_n_f32[3] = { // (3x1)
 		0,
 		0,
 		g,
 }; // Gravitation vector in frame n, unit (m/s^2)
 
-float w_avg_f32[3] = {
+float w_avg_b0_f32[3] = { // (3x1)
 		0,
 		0,
 		0,
 }; // Average angular rate vector of b0 relative to nav in b0, unit (deg/s)
 
-float q_f32[4] = {
+float q_f32[4] = { // (4x1)
 		1,
 		0,
 		0,
 		0,
 }; // Quaternion representing rotation of board frame from nav frame, init to Identity quaternion (1, 0, 0, 0)
 
-float rotation_b0_n_f32[9] = {
+float rotation_b0_n_f32[9] = { // (3x3)
 		0, 0, 0,
 		0, 0, 0,
 		0, 0, 0,
 }; // Rotation matrix from board frame to nav frame, init to all zeros
 
-float x_prev_f32[12] = {
+float x_prev_f32[12] = { // (12x1)
 		0,
 		0,
 		0,
@@ -61,7 +64,7 @@ float x_prev_f32[12] = {
 		0,
 }; // State variable at k-1, x = [r0_n, r1_n, v0_n, v1_n]^T, init to all zeros
 
-float x_curr_f32[12] = {
+float x_curr_f32[12] = { // (12x1)
 		0,
 		0,
 		0,
@@ -79,7 +82,7 @@ float x_curr_f32[12] = {
 		0,
 }; // State variable at k, x = [r0_n, r1n, v0_n, v1_n]^T, init to all zeros
 
-float F_matrix_f32[144] = {
+float F_matrix_f32[144] = { // (12x12)
 		1,0,0,	0,0,0,	1,0,0,	0,0,0,
 		0,1,0,	0,0,0,	0,1,0,	0,0,0,
 		0,0,1,	0,0,0,	0,0,1,	0,0,0,
@@ -97,9 +100,7 @@ float F_matrix_f32[144] = {
 		0,0,0,	0,0,0,	0,0,0,	0,0,1,
 }; // State transition matrix, both top right I matrices multiplied by dt
 
-float F_transpose_f32[144]; // State transition matrix transpose
-
-float B_matrix_f32[72] = {
+float B_matrix_f32[72] = { // (12x6)
 		1,0,0, 0,0,0,
 		0,1,0, 0,0,0,
 		0,0,1, 0,0,0,
@@ -117,7 +118,7 @@ float B_matrix_f32[72] = {
 		0,0,0, 0,0,1,
 }; // Control matrix to transform IMU data, top 2 I matrices multiplied by dt^2/2, bottom 2 multiplied by dt
 
-float u_curr_f32[6] = {
+float u_curr_f32[6] = { // (6x1)
 		0,
 		0,
 		0,
@@ -127,22 +128,120 @@ float u_curr_f32[6] = {
 		0,
 }; // Input vector populated with IMU data in nav frame, init to all zeros, units (m/s^2)
 
+float H_swing_f32[72] = { // (6x12)
+		0,0,0, 0,0,0, -1,0,0, 1,0,0,
+		0,0,0, 0,0,0, 0,-1,0, 0,1,0,
+		0,0,0, 0,0,0, 0,0,-1, 0,0,1,
+
+		-1,0,0, 1,0,0, 0,0,0, 0,0,0,
+		0,-1,0, 0,1,0, 0,0,0, 0,0,0,
+		0,0,-1, 0,0,1, 0,0,0, 0,0,0,
+}; // Observation matrix H_1, swing phase
+
+float H_stance_f32[144] = { // (12x12)
+		0,0,0, 0,0,0, -1,0,0, 1,0,0,
+		0,0,0, 0,0,0, 0,-1,0, 0,1,0,
+		0,0,0, 0,0,0, 0,0,-1, 0,0,1,
+
+		-1,0,0, 1,0,0, 0,0,0, 0,0,0,
+		0,-1,0, 0,1,0, 0,0,0, 0,0,0,
+		0,0,-1, 0,0,1, 0,0,0, 0,0,0,
+
+		0,0,0, 0,0,0, 1,0,0, 0,0,0,
+		0,0,0, 0,0,0, 0,1,0, 0,0,0,
+		0,0,0, 0,0,0, 0,0,1, 0,0,0,
+
+		0,0,0, 0,0,0, 0,0,0, 1,0,0,
+		0,0,0, 0,0,0, 0,0,0, 0,1,0,
+		0,0,0, 0,0,0, 0,0,0, 0,0,1,
+}; // Observation matrix H_2, stance phase
+
+float Z_swing_f32[6] = { // (6x1)
+		0,
+		0,
+		0,
+
+		0,
+		0,
+		0,
+}; // Observation matrix H_1, swing phase, init to all zeros
+
+float Z_stance_f32[12] = { // (12x1)
+		0,
+		0,
+		0,
+
+		0,
+		0,
+		0,
+
+		0,
+		0,
+		0,
+
+		0,
+		0,
+		0,
+}; // Observation matrix H_2, stance phase, init to all zeros (last 2 vectors stay as zero)
+
+float K_swing_f32[72] = { // (12x6)
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+		0,0,0, 0,0,0,
+}; // Kalman Gain K_1, swing phase, init to all zeros
+
+float K_stance_f32[144] = { // (12x12)
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+}; // Kalman Gain K_2, stance phase, init to all zeros
+
 /*
  *  Matrix instances
  */
 arm_matrix_instance_f32 m_b0; 			// Relative IMU positions, frame b0
 arm_matrix_instance_f32 g_n;			// Gravitation vector, frame n
-arm_matrix_instance_f32 w_avg;			// Average angular rate vector, frame b0
+arm_matrix_instance_f32 w_avg_b0;		// Average angular rate vector, frame b0
 arm_matrix_instance_f32 rotation_b0_n; 	// Rotation matrix, frame b0 to frame n
 arm_matrix_instance_f32 x_prev;			// State variable, k-1
 arm_matrix_instance_f32 x_curr;			// State variable, k
 arm_matrix_instance_f32 F_matrix;		// State transition matrix
-arm_matrix_instance_f32 F_transpose;	// State transition matrix transpose
 arm_matrix_instance_f32 B_matrix;		// Control matrix
 arm_matrix_instance_f32 u_curr;			// Input vector, frame n
+arm_matrix_instance_f32 H_swing;		// Observation matrix, swing phase
+arm_matrix_instance_f32 H_stance;		// Observation matrix, stance phase
+arm_matrix_instance_f32 Z_swing;		// Observation vector, swing phase
+arm_matrix_instance_f32 Z_stance;		// Observation vector, stance phase
+arm_matrix_instance_f32 K_swing;		// Kalman Gain, swing phase
+arm_matrix_instance_f32 K_stance;		// Kalman Gain, stance phase
+
 
 void init_processing(void) {
-	uint32_t numRows, numCols; // temp vars
+	uint16_t numRows, numCols; // temp vars
 
 	/*
 	 * Init vectors/matrices
@@ -161,7 +260,7 @@ void init_processing(void) {
 	// Average angular rate vector
 	numRows = 3;
 	numCols = 1;
-	arm_mat_init_f32(&w_avg, numRows, numCols, w_avg_f32);
+	arm_mat_init_f32(&w_avg_b0, numRows, numCols, w_avg_b0_f32);
 
 	// Rotation matrix
 	numRows = 3;
@@ -183,12 +282,6 @@ void init_processing(void) {
 	numCols = 12;
 	arm_mat_init_f32(&F_matrix, numRows, numCols, F_matrix_f32);
 
-	// State transition matrix
-	numRows = 12;
-	numCols = 12;
-	arm_mat_init_f32(&F_transpose, numRows, numCols, F_transpose_f32);
-	arm_mat_trans_f32(&F_matrix, &F_transpose); // Fill transposed matrix
-
 	// Control matrix
 	numRows = 12;
 	numCols = 6;
@@ -199,57 +292,119 @@ void init_processing(void) {
 	numCols = 1;
 	arm_mat_init_f32(&u_curr, numRows, numCols, u_curr_f32);
 
+	// Observation matrix, swing phase
+	numRows = 6;
+	numCols = 12;
+	arm_mat_init_f32(&H_swing, numRows, numCols, H_swing_f32);
+
+	// Observation matrix, stance phase
+	numRows = 12;
+	numCols = 12;
+	arm_mat_init_f32(&H_stance, numRows, numCols, H_stance_f32);
+
+	// Observation vector, swing phase
+	numRows = 6;
+	numCols = 1;
+	arm_mat_init_f32(&Z_swing, numRows, numCols, Z_swing_f32);
+
+	// Observation vector, stance phase
+	numRows = 12;
+	numCols = 1;
+	arm_mat_init_f32(&Z_stance, numRows, numCols, Z_stance_f32);
+
+	// Kalman Gain, swing phase
+	numRows = 12;
+	numCols = 6;
+	arm_mat_init_f32(&K_swing, numRows, numCols, K_swing_f32);
+
+	// Kalman Gain, stance phase
+	numRows = 12;
+	numCols = 12;
+	arm_mat_init_f32(&K_stance, numRows, numCols, K_stance_f32);
+
 }
 
-void calculateCorrectedState(SensorData* IMU0_data, SensorData* IMU1_data, float timeDelta) {
+void calculateCorrectedState(
+		SensorData* IMU0_data,
+		SensorData* IMU1_data,
+		float timeDelta) {
 
-	calculateAvgAngularRate(IMU0_data, IMU1_data); // w_avg
+	calculateAvgAngularRate(IMU0_data, IMU1_data); // w_avg_b0
 
-	calculateRotationMatrix(timeDelta); // R_b0_n
+	calculateRotationMatrix(timeDelta);	// R_b0_n
 
-	updateFMatrix(timeDelta); // Update F, F^T with new timeDelta
+	updateFMatrix(timeDelta);	// Update F with new timeDelta
 
-	updateBMatrix(timeDelta); // Update B with new timeDelta
+	updateBMatrix(timeDelta);	// Update B with new timeDelta
 
-	updateUVector(IMU0_data, IMU1_data); // Update u_curr with IMU data
+	updateUVector(IMU0_data, IMU1_data);	// Update u_curr with IMU data
 
-	calculateStateEstimation(); // x = F*x(k-1) + B*u(k) // TODO Make sure these multiplications happen as expected
+	calculateStateEstimation();	// x(k) = F*x(k-1) + B*u(k) // TODO Make sure these multiplications happen as expected, it looks fine in a test I ran in VS
 
-	// calculate state estimation error covariance (P-)
+	// calculate state estimation error covariance (P-) // TODO need to tune process noise covariance matrix Q(k-1)
 
 	// Determine Swing or Stance Phase
-		// calculate Observation vector (Zi), Observation matrix (Hi), Gain (Ki)
 
-	// calculate optimal state estimation (x_best)
+	enum PHASE phase;
+	arm_matrix_instance_f32 Hi; // (Nx12)
+	arm_matrix_instance_f32 Zi; // (Nx1)
+	arm_matrix_instance_f32 Ri;	// (NxN) // TODO need to tune observation noise covariance matrix Ri(k)
+	arm_matrix_instance_f32 Ki; // (12xN)
 
-	// calculate optimal estimation error covariance (P)
+	if (phase == SWING) {
+		// N = 6
+		Hi = H_swing;
+		Zi = Z_swing;
+		Ri = R_swing;
+		Ki = K_swing;
+	} else { // phase == STANCE
+		// N = 12
+		Hi = H_stance;
+		Zi = Z_stance;
+		Ri = R_stance;
+		Ki = K_stance;
+	}
+	// These matrices have different dimensions, so they need to be assigned to the instance of the correct size
 
-	// update x_prev, P_prev, Q_prev
+	updateZiVector(&Zi);	// Update Observation Vector Z for optimal state estimation
+
+	calculateGainMatrix(&Ki, &Hi, &Ri); // Ki(k) = P-(k)*Hi^T * (Hi*P-(k)*Hi^T + Ri(k))^-1
+
+	calculateOptimalStateEstimation(&Ki, &Zi, &Hi);	// x(k) <-- x_best(k) = x(k) + Ki(k)*(Zi(k) - Hi*x(k))
+
+	// calculate optimal estimation error covariance (P(k))
+
+	updatePrevMatrices();	// update x_prev, P_prev, (Q_prev?)
 
 }
 
-void calculateAvgAngularRate(SensorData* IMU0_data, SensorData* IMU1_data) {
-	w_avg_f32[0] = (IMU0_data->G_X + IMU1_data->G_X) / 2;
-	w_avg_f32[1] = (IMU0_data->G_Y + IMU1_data->G_Y) / 2;
-	w_avg_f32[2] = (IMU0_data->G_Z + IMU1_data->G_Z) / 2;
+void calculateAvgAngularRate(
+		SensorData* IMU0_data,
+		SensorData* IMU1_data) {
 
-	// Determine |w_avg|
-	w_avg_mag = (w_avg_f32[0]*w_avg_f32[0]) + (w_avg_f32[1]*w_avg_f32[1]) + (w_avg_f32[2]*w_avg_f32[2]);
-	arm_sqrt_f32(w_avg_mag, &w_avg_mag);
+	w_avg_b0_f32[0] = (IMU0_data->G_X + IMU1_data->G_X) / 2;
+	w_avg_b0_f32[1] = (IMU0_data->G_Y + IMU1_data->G_Y) / 2;
+	w_avg_b0_f32[2] = (IMU0_data->G_Z + IMU1_data->G_Z) / 2;
+
+	// Determine |w_avg_b0|
+	w_avg_b0_mag = (w_avg_b0_f32[0]*w_avg_b0_f32[0]) + (w_avg_b0_f32[1]*w_avg_b0_f32[1]) + (w_avg_b0_f32[2]*w_avg_b0_f32[2]);
+	arm_sqrt_f32(w_avg_b0_mag, &w_avg_b0_mag);
 }
 
-void calculateRotationMatrix(float timeDelta) {
-	// Determine change in rotation angle / 2(radians)
-	float rotation_angle_div_2 = w_avg_mag * timeDelta * deg2rad / 2;
+void calculateRotationMatrix(
+		float timeDelta) {
 
-	float q1_3_scaling_term = arm_sin_f32(rotation_angle_div_2) / w_avg_mag; // reduce number of calculations
+	// Determine change in rotation angle / 2 (units of radians)
+	float rotation_angle_div_2 = w_avg_b0_mag * timeDelta * deg2rad / 2;
+
+	float q1_3_scaling_term = arm_sin_f32(rotation_angle_div_2) / w_avg_b0_mag; // reduce number of calculations
 
 	// Determine change in rotation as quaternion
 	float delta_q_f32[4];
 	delta_q_f32[0] = arm_cos_f32(rotation_angle_div_2);
-	delta_q_f32[1] = w_avg_f32[0] * q1_3_scaling_term;
-	delta_q_f32[2] = w_avg_f32[1] * q1_3_scaling_term;
-	delta_q_f32[3] = w_avg_f32[2] * q1_3_scaling_term;
+	delta_q_f32[1] = w_avg_b0_f32[0] * q1_3_scaling_term;
+	delta_q_f32[2] = w_avg_b0_f32[1] * q1_3_scaling_term;
+	delta_q_f32[3] = w_avg_b0_f32[2] * q1_3_scaling_term;
 
 	// Calculate new normalized quaternion
 	arm_quaternion_product_single_f32(q_f32, delta_q_f32, q_f32); // q = q x delta_q
@@ -272,19 +427,98 @@ void calculateStateEstimation() {
 
 	arm_mat_mult_f32(&B_matrix, &u_curr, &temp2); // B*u(k) --> (12x6) * (6x1)
 
-	arm_mat_sum_f32(&temp1, &temp2, &x_curr);
+	arm_mat_add_f32(&temp1, &temp2, &x_curr); // x(k) = F*x(k-1) + B*u(k)
 }
 
-void updateFMatrix(float timeDelta) {
+void calculateGainMatrix(
+		arm_matrix_instance_f32* Ki, /*(12xN)*/
+		arm_matrix_instance_f32* Hi, /*(Nx12)*/
+		arm_matrix_instance_f32* Ri /*(NxN)*/) {
+
+	uint16_t N = Hi->numRows;
+
+	/*
+	 *  Define Temporary Objects
+	 */
+
+	float* temp12xN_f32 = (float*)malloc(12 * N * sizeof(float));
+	arm_matrix_instance_f32 temp12xN;
+	arm_mat_init_f32(&temp12xN, 12, N, temp12xN_f32); // temp matrix (12xN)
+	arm_mat_trans_f32(Hi, &temp12xN); // init to transpose of Hi
+
+	float* tempNxN_f32 = (float*)malloc(N * N * sizeof(float));
+	arm_matrix_instance_f32 tempNxN;
+	arm_mat_init_f32(&tempNxN, N, N, tempNxN_f32); // temp matrix (NxN)
+
+	/*
+	 *  Calculation Section
+	 */
+
+	arm_mat_mult_f32(&P_minus, &temp12xN, &temp12xN);	// P-(k)*Hi^T --> (12x12) * (12xN)
+
+	arm_mat_mult_f32(Hi, &temp12xN, &tempNxN);	// Hi*(P-(k)*Hi^T) --> (Nx12) * (12xN)
+
+	arm_mat_add_f32(&tempNxN, Ri, &tempNxN);	// (Hi*P-(k)*Hi^T + Ri(k))
+
+	arm_mat_inverse_f32(&tempNxN, &tempNxN);	// (Hi*P-(k)*Hi^T + Ri(k))^-1
+
+	arm_mat_mult_f32(&temp12xN, &tempNxN, Ki);	// Ki(k) = P-(k)*Hi^T * (Hi*P-(k)*Hi^T + Ri(k))^-1 --> (12xN) * (NxN)
+
+	// Free malloc'd memory
+	free(temp12xN_f32);
+	free(tempNxN_f32);
+}
+
+void calculateOptimalStateEstimation(
+		arm_matrix_instance_f32* Ki, /*(12xN)*/
+		arm_matrix_instance_f32* Zi, /*(Nx1)*/
+		arm_matrix_instance_f32* Hi /*(Nx12)*/) {
+
+	uint16_t N = Zi->numRows;
+
+	/*
+	 *  Define Temporary Objects
+	 */
+
+	float* tempNx1_f32 = (float*)malloc(N * sizeof(float));
+	arm_matrix_instance_f32 tempNx1;
+	arm_mat_init_f32(&tempNx1, N, 1, tempNx1_f32); // Will temporarily store some operation results, (Nx1)
+
+	float temp12x1_f32[12];
+	arm_matrix_instance_f32 temp12x1;
+	arm_mat_init_f32(&temp12x1, 12, 1, temp12x1_f32); // Will temporarily store some operation results, (12x1)
+
+	/*
+	 *  Calculation Section
+	 */
+
+	arm_mat_mult_f32(Hi, &x_curr, &tempNx1);	// Hi*x(k) --> (Nx12) * (12x1)
+
+	// Calculate correction factor
+	arm_mat_sub_f32(Zi, &tempNx1, &tempNx1);	// (Zi(k) - Hi*x(k)) -> tempNx1
+
+	// Weight correction factor by Kalman Gain
+	arm_mat_mult_f32(Ki, &tempNx1, &temp12x1); // Ki(k) * (Zi(k) - Hi*x(k)) --> (12xN) * (Nx1) -> temp12x1
+
+	// Add weighted correction factor
+	arm_mat_add_f32(&x_curr, &temp12x1, &x_curr); // x(k) <= x_best(k) = x(k) * Ki(k) * (Zi(k) - Hi*x(k))
+
+	// Free malloc'd memory
+	free(tempNx1_f32);
+}
+
+void updateFMatrix(
+		float timeDelta) {
+
 	int i;
 	for(i = 0; i < 6; ++i) { // Update specific indices of F matrix
 		F_matrix_f32[6 + (13*i)] = timeDelta;
 	}
-
-	arm_mat_trans_f32(&F_matrix, &F_transpose); // Update transpose matrix
 }
 
-void updateBMatrix(float timeDelta) {
+void updateBMatrix(
+		float timeDelta) {
+
 	float dt2 = timeDelta * timeDelta / 2;
 
 	int i;
@@ -297,7 +531,14 @@ void updateBMatrix(float timeDelta) {
 	}
 }
 
-void updateUVector(SensorData* IMU0_data,SensorData* IMU1_data) {
+void updateUVector(
+		SensorData* IMU0_data,
+		SensorData* IMU1_data) {
+
+	/*
+	 *  Define Temporary Objects
+	 */
+
 	float temp0_f32[3] = {IMU0_data->XL_X, IMU0_data->XL_Y, IMU0_data->XL_Z}; // Init with IMU0 acceleration
 	arm_matrix_instance_f32 temp0;
 	arm_mat_init_f32(&temp0, 3, 1, temp0_f32); // temp for IMU0 vector
@@ -306,17 +547,25 @@ void updateUVector(SensorData* IMU0_data,SensorData* IMU1_data) {
 	arm_matrix_instance_f32 temp1;
 	arm_mat_init_f32(&temp1, 3, 1, temp1_f32); // temp for IMU1 vector
 
+	/*
+	 *  Calculation Section
+	 */
+
 	// Rotate IMU0 XL from board frame to nav frame
-	arm_mat_mult_f32(&rotation_b0_n, &temp0, &temp0);
+	arm_mat_mult_f32(&rotation_b0_n, &temp0, &temp0);	// R_b0_n*a0_b0 --> (3x3) * (3x1)
 
 	// Rotate IMU1 XL from board frame to nav frame
-	arm_mat_mult_f32(&rotation_b0_n, &temp1, &temp1);
+	arm_mat_mult_f32(&rotation_b0_n, &temp1, &temp1);	// R_b0_n*a1_b0 --> (3x3) * (3x1)
 
 	// Subtract gravitation vector from IMU0 XL vector
 	arm_mat_sub_f32(&temp0, &g_n, &temp0);
 
 	// Subtract gravitation vector from IMU1 XL vector
 	arm_mat_sub_f32(&temp1, &g_n, &temp1);
+
+	/*
+	 *  Update Section
+	 */
 
 	// Fill u input vector with IMU0 data
 	u_curr_f32[0] = temp0_f32[0];
@@ -328,6 +577,80 @@ void updateUVector(SensorData* IMU0_data,SensorData* IMU1_data) {
 	u_curr_f32[4] = temp1_f32[1];
 	u_curr_f32[5] = temp1_f32[2];
 }
+
+void updateZiVector(
+		arm_matrix_instance_f32* Zi) {
+
+	/*
+	 *  Define Temporary Objects
+	 */
+
+	float tempRm_f32[3];
+	arm_matrix_instance_f32 tempRm;	// Rotation of m_b0 from b0 to n
+	arm_mat_init_f32(&tempRm, 3, 1, tempRm_f32);
+	float tempRw_f32[3];
+	arm_matrix_instance_f32 tempRw;	// Rotation of w_avg_b0 from b0 to n
+	arm_mat_init_f32(&tempRw, 3, 1, tempRw_f32);
+
+	/*
+	 *  Calculation Section
+	 */
+
+	// Rotate w_avg_b0 from board frame to nav frame
+	arm_mat_mult_f32(&rotation_b0_n, &w_avg_b0, &tempRw);	// R_b0_n*w_avg_b0 --> (3x3) * (3x1)
+
+	// Rotate m_b0 from board frame to nav frame
+	arm_mat_mult_f32(&rotation_b0_n, &m_b0, &tempRm);	// R_b0_n*m_b0 --> (3x3) * (3x1)
+
+	/*
+	 *  Update Section
+	 */
+
+	// Copy Rm to second vector of Zi
+	Zi->pData[3] = tempRm_f32[0];
+	Zi->pData[4] = tempRm_f32[1];
+	Zi->pData[5] = tempRm_f32[2];
+
+	// Do (Rw x Rm), store in Rw as a temp location
+	cross_product(&tempRw, &tempRm, &tempRw);
+
+	// Copy (Rw x Rm) to first vector of Zi
+	Zi->pData[0] = tempRw_f32[0];
+	Zi->pData[1] = tempRw_f32[1];
+	Zi->pData[2] = tempRw_f32[2];
+}
+
+void updatePrevMatrices(void) {
+	int i;
+	int j;
+	for (i = 0; i < x_curr.numRows; ++i) {
+		x_prev.pData[i] = x_curr.pData[i];
+	}
+
+	for (i = 0; i < P_prev.numRows; ++i) {
+		for (j = 0; j < P_prev.numCols; ++j) {
+			P_prev.pData[i][j] = P_curr.pData[i][j];
+		}
+	}
+
+	// TODO Update Q(k-1) somehow
+}
+
+void cross_product(
+		arm_matrix_instance_f32* a,
+		arm_matrix_instance_f32* b,
+		arm_matrix_instance_f32* c) {
+
+	// Make copy to avoid using overwritten data in calculations (ex. if a = c)
+	float aData[3] = {a->pData[0], a->pData[1], a->pData[2]};
+	float bData[3] = {b->pData[0], b->pData[1], b->pData[2]};
+
+	c->pData[0] = aData[1] * bData[2] - aData[2] * bData[1];
+	c->pData[1] = aData[2] * bData[0] - aData[0] * bData[2];
+	c->pData[2] = aData[0] * bData[1] - aData[1] * bData[0];
+}
+
+
 
 
 

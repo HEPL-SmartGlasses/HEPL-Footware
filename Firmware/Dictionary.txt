@@ -6,3 +6,14 @@ radians
 covariance
 deg
 temp
+zi
+hi
+ki
+ri
+vars
+rw
+rm
+prev
+curr
+coriolis
+kalman
