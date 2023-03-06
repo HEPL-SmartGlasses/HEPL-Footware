@@ -23,11 +23,11 @@ void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU) {
 	 *  Startup Sequence
 	 */
 	buf[0] = CTRL1_XL;
-	buf[1] = 0x5C;
+	buf[1] = 0x4C;
 	IMU_writeRegister(IMU, buf, 1);
 
 	buf[0] = CTRL2_G;
-	buf[1] = 0x58;
+	buf[1] = 0x48;
 	IMU_writeRegister(IMU, buf, 1);
 
 	buf[0] = INT2_CTRL;

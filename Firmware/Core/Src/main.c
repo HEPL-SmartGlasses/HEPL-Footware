@@ -56,7 +56,7 @@ SensorData IMU1_data;
 volatile uint8_t periodic_tx_flag = 0;
 volatile uint8_t DRDY_flag = 0;
 
-volatile float timeDelta = 0.00480769230769230769230769230769; // Default to 1/208Hz (IMU sample rate)
+volatile float timeDelta = 1.0F/104; // Default to 1/104Hz (IMU sample rate)
 
 /* USER CODE END PV */
 

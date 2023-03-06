@@ -18,3 +18,5 @@ curr
 coriolis
 kalman
 posteriori
+accel
+val
