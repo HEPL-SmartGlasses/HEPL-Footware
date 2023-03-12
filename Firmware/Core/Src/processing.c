@@ -5,7 +5,7 @@
  *      Author: evanm
  */
 
-#include "processing.h"
+#include <processing.h>
 #include "stdlib.h"
 
 float w_avg_b0_mag;
@@ -481,9 +481,10 @@ void calculateCorrectedState(
 	calculateStateEstimationErrorCovariance();	// P-(k) = F*P(k-1)*F^T + Q(k-1)
 	// TODO need to tune process noise covariance matrix Q(k-1)
 
+
+	enum PHASE phase = SWING; // TODO set phase to determined value
 	// Determine Swing or Stance Phase
 
-	enum PHASE phase;
 	arm_matrix_instance_f32 Hi; // (Nx12)
 	arm_matrix_instance_f32 Zi; // (Nx1)
 	arm_matrix_instance_f32 Ri;	// (NxN) // TODO need to tune observation noise covariance matrix Ri(k)
@@ -583,7 +584,7 @@ void calculateStateEstimationErrorCovariance(void) {
 	 *  Define Temporary Objects
 	 */
 
-	float temp12x12_f32[12];
+	float temp12x12_f32[144];
 	arm_matrix_instance_f32 temp12x12;
 	arm_mat_init_f32(&temp12x12, 12, 12, temp12x12_f32); // Temp 12x12 matrix
 	arm_mat_trans_f32(&F_matrix, &temp12x12);	// Initialize to transpose of F
