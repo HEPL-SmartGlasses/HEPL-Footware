@@ -536,11 +536,11 @@ void calculateRotationMatrix(
 	// Determine change in rotation angle / 2 (units of radians)
 	float rotation_angle_div_2 = w_avg_b0_mag * timeDelta * deg2rad / 2;
 
-	float q1_3_scaling_term = arm_sin_f32(rotation_angle_div_2) / w_avg_b0_mag; // reduce number of calculations
+	float q1_3_scaling_term = (float)sin(rotation_angle_div_2) / w_avg_b0_mag; // reduce number of calculations
 
 	// Determine change in rotation as quaternion
 	float delta_q_f32[4];
-	delta_q_f32[0] = arm_cos_f32(rotation_angle_div_2);
+	delta_q_f32[0] = (float)cos(rotation_angle_div_2);
 	delta_q_f32[1] = w_avg_b0_f32[0] * q1_3_scaling_term;
 	delta_q_f32[2] = w_avg_b0_f32[1] * q1_3_scaling_term;
 	delta_q_f32[3] = w_avg_b0_f32[2] * q1_3_scaling_term;

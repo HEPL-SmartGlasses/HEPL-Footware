@@ -15,7 +15,11 @@ class SensorData(Structure):
                     ('G_Y', c_float),
                     ('G_Z', c_float)]
 
-IMU0_data = SensorData(0,0,0,0,0,0)
-IMU1_data = SensorData(0,0,0,0,0,0)
+SensorData_ptr = POINTER(SensorData)
 
-p_funcs.calculateCorrectedState(pointer(IMU0_data), pointer(IMU1_data), 1/104)
+p_funcs.calculateCorrectedState.argtypes = [SensorData_ptr, SensorData_ptr, c_float]
+
+IMU0_data = SensorData(0)
+IMU1_data = SensorData(0)
+
+p_funcs.calculateCorrectedState(SensorData_ptr.from_address(addressof(IMU0_data)), SensorData_ptr.from_address(addressof(IMU1_data)), 1.0/104)
