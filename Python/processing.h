@@ -9,7 +9,7 @@
 #define INC_PROCESSING_H_
 
 #include "arm_math.h"
-#include "IMU.h"
+typedef struct {float XL_X;float XL_Y;float XL_Z;float G_X;float G_Y;float G_Z;} SensorData;
 
 typedef struct {
 	float X;

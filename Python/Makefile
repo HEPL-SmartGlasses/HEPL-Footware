@@ -1,6 +1,7 @@
 CC=gcc
 CFLAGS=-Wall
 OTHERDIR=../Firmware/Core/Src/
+CMSISDIR=../Firmware/Middlewares/Third_Party/ARM_CMSIS/CMSIS/Core/Include/
 DSPDIR=../Firmware/Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Include/
 DSPSRC=$(DSPDIR)../Source/
 DSPFMF=$(DSPSRC)FastMathFunctions/
@@ -11,25 +12,54 @@ SOURCE=$(OTHERDIR):$(DSPDIR):$(DSPSRC):$(DSPFMF):$(DSPMF):$(DSPQMF)
 
 INCLUDE= -I$(DSPDIR) -I$(OTHERDIR)../../../Python -I$(DSPDIR)../../Core/Include/
 
+CYTHONOBJS=  main.cpython-38-x86_64-linux-gnu.so
 OBJS= arm_mat_add_f32.o arm_mat_init_f32.o arm_mat_inverse_f32.o arm_mat_mult_f32.o arm_mat_sub_f32.o arm_mat_trans_f32.o arm_quaternion2rotation_f32.o arm_quaternion_normalize_f32.o arm_quaternion_product_single_f32.o
 
 VPATH=$(OTHERDIR):%.h:%.c
 
-all: clean copy processing.so
+all: clean libprocessing.so python
 
 copy:
 	cp $(OTHERDIR)../Inc/processing.h .
+	cp $(DSPDIR)arm_math.h .
+	cp $(DSPDIR)arm_math_types.h .
+	cp $(DSPDIR)arm_math_memory.h .
+	cp $(CMSISDIR)cmsis_gcc.h .
+	cp $(CMSISDIR)cmsis_compiler.h .
 	cp -a $(DSPQMF)*_f32.c .
 	cp -a $(DSPMF)*_f32.c .
 	cp -r $(DSPDIR)dsp/ .
+	cp $(DSPDIR)arm_math_memory.h ./dsp/
+	cp $(DSPDIR)arm_math_types.h ./dsp/
+	mkdir ./dsp/dsp/
+	cp ./dsp/none.h ./dsp/dsp/
+	cp ./dsp/utils.h ./dsp/dsp/
+	sed -i 's/"dsp\//"/g' ./dsp/bayes_functions.h
+	sed -i 's/"dsp\//"/g' ./dsp/complex_math_functions.h
+	sed -i 's/"dsp\//"/g' ./dsp/distance_functions.h
+	sed -i 's/"dsp\//"/g' ./dsp/svm_functions.h
+	sed -i 's/"dsp\//"/g' ./dsp/transform_functions.h
+	sed -i 's/"dsp\//"/g' ./dsp/filtering_functions.h
+	sed -i 's/"dsp\//"/g' ./dsp/statistics_functions.h
+	sed -i 's/#include "IMU.h"/typedef struct {float XL_X;float XL_Y;float XL_Z;float G_X;float G_Y;float G_Z;} SensorData;/g' processing.h
+
+updateProcessing:
+	cp $(OTHERDIR)../Inc/processing.h .
+	cp $(OTHERDIR)processing.c .
 	sed -i 's/#include "IMU.h"/typedef struct {float XL_X;float XL_Y;float XL_Z;float G_X;float G_Y;float G_Z;} SensorData;/g' processing.h
 
 %.o: %.c
 	$(CC) -c -o $@ $^ $(INCLUDE)
 
-processing.so: processing.c $(OBJS) processing.h Makefile
+libprocessing.so: processing.c $(OBJS) processing.h Makefile
 	$(CC) -fPIC -shared -o $@ $< $(INCLUDE) $(OBJS)
 
+python:
+	python3 setup.py build_ext --inplace
+
 clean:
-	@-rm -f CMakeLists.txt *.o *.so *.h *.c
-	@rm -r dsp
+	@rm -f *.so
+
+cleanall:
+	@-rm -f CMakeLists.txt *.so *.h *.c
+	@rm -rf dsp
