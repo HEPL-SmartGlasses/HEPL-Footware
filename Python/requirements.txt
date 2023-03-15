@@ -1,4 +1,3 @@
-Created temporary directory: /tmp/pip-ephem-wheel-cache-16oxp4q_
 attrs==19.3.0
 Automat==0.8.0
 blinker==1.4
