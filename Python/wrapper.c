@@ -1044,6 +1044,16 @@ static const char *__pyx_f[] = {
 #define __Pyx_CLEAR(r)    do { PyObject* tmp = ((PyObject*)(r)); r = NULL; __Pyx_DECREF(tmp);} while(0)
 #define __Pyx_XCLEAR(r)   do { if((r) != NULL) {PyObject* tmp = ((PyObject*)(r)); r = NULL; __Pyx_DECREF(tmp);}} while(0)
 
+/* PyObjectGetAttrStr.proto */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name);
+#else
+#define __Pyx_PyObject_GetAttrStr(o,n) PyObject_GetAttr(o,n)
+#endif
+
+/* GetBuiltinName.proto */
+static PyObject *__Pyx_GetBuiltinName(PyObject *name);
+
 /* PyDictVersioning.proto */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
 #define __PYX_DICT_VERSION_INIT  ((PY_UINT64_T) -1)
@@ -1068,13 +1078,6 @@ static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UIN
 #define __PYX_GET_DICT_VERSION(dict)  (0)
 #define __PYX_UPDATE_DICT_CACHE(dict, value, cache_var, version_var)
 #define __PYX_PY_DICT_LOOKUP_IF_MODIFIED(VAR, DICT, LOOKUP)  (VAR) = (LOOKUP);
-#endif
-
-/* PyObjectGetAttrStr.proto */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name);
-#else
-#define __Pyx_PyObject_GetAttrStr(o,n) PyObject_GetAttr(o,n)
 #endif
 
 /* PyThreadStateGet.proto */
@@ -1139,6 +1142,11 @@ static void __pyx_insert_code_object(int code_line, PyCodeObject* code_object);
 static void __Pyx_AddTraceback(const char *funcname, int c_line,
                                int py_line, const char *filename);
 
+/* GCCDiagnostics.proto */
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#define __Pyx_HAS_GCC_DIAGNOSTIC
+#endif
+
 /* Print.proto */
 static int __Pyx_Print(PyObject*, PyObject *, int);
 #if CYTHON_COMPILING_IN_PYPY || PY_MAJOR_VERSION >= 3
@@ -1146,19 +1154,14 @@ static PyObject* __pyx_print = 0;
 static PyObject* __pyx_print_kwargs = 0;
 #endif
 
+/* CIntFromPy.proto */
+static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
+
 /* PrintOne.proto */
 static int __Pyx_PrintOne(PyObject* stream, PyObject *o);
 
-/* GCCDiagnostics.proto */
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#define __Pyx_HAS_GCC_DIAGNOSTIC
-#endif
-
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
-
-/* CIntFromPy.proto */
-static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
 
 /* CIntFromPy.proto */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
@@ -1190,6 +1193,7 @@ extern int __pyx_module_is_main_wrapper;
 int __pyx_module_is_main_wrapper = 0;
 
 /* Implementation of 'wrapper' */
+static PyObject *__pyx_builtin_range;
 static const char __pyx_k_X[] = "X";
 static const char __pyx_k_Y[] = "Y";
 static const char __pyx_k_Z[] = "Z";
@@ -1205,6 +1209,7 @@ static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_print[] = "print";
+static const char __pyx_k_range[] = "range";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static PyObject *__pyx_n_s_G_X;
 static PyObject *__pyx_n_s_G_Y;
@@ -1221,6 +1226,7 @@ static PyObject *__pyx_n_s_file;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_n_s_print;
+static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_pf_7wrapper_call(CYTHON_UNUSED PyObject *__pyx_self); /* proto */
 /* Late includes */
@@ -1239,11 +1245,13 @@ static PyObject *__pyx_f_7wrapper_call(CYTHON_UNUSED int __pyx_skip_dispatch) {
   SensorData __pyx_v_IMU0_data;
   SensorData __pyx_v_IMU1_data;
   Position __pyx_v_p;
+  CYTHON_UNUSED long __pyx_v_i;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   SensorData __pyx_t_1;
   Position __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  long __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -1263,20 +1271,20 @@ static PyObject *__pyx_f_7wrapper_call(CYTHON_UNUSED int __pyx_skip_dispatch) {
  * 
  * 	timeDelta = 1.0/104             # <<<<<<<<<<<<<<
  * 
- * 	cdef SensorData IMU0_data = SensorData(XL_X=1,XL_Y=0,XL_Z=0,G_X=0,G_Y=0,G_Z=0)
+ * 	cdef SensorData IMU0_data = SensorData(XL_X=0,XL_Y=0,XL_Z=9.80274,G_X=0,G_Y=0,G_Z=0)
  */
   __pyx_v_timeDelta = (1.0 / 104.0);
 
   /* "wrapper.pyx":37
  * 	timeDelta = 1.0/104
  * 
- * 	cdef SensorData IMU0_data = SensorData(XL_X=1,XL_Y=0,XL_Z=0,G_X=0,G_Y=0,G_Z=0)             # <<<<<<<<<<<<<<
- * 	cdef SensorData IMU1_data = SensorData(XL_X=0.5,XL_Y=0,XL_Z=0,G_X=0,G_Y=0,G_Z=0)
+ * 	cdef SensorData IMU0_data = SensorData(XL_X=0,XL_Y=0,XL_Z=9.80274,G_X=0,G_Y=0,G_Z=0)             # <<<<<<<<<<<<<<
+ * 	cdef SensorData IMU1_data = SensorData(XL_X=0,XL_Y=0,XL_Z=9.80274,G_X=0,G_Y=0,G_Z=0)
  * 
  */
-  __pyx_t_1.XL_X = 1.0;
+  __pyx_t_1.XL_X = 0.0;
   __pyx_t_1.XL_Y = 0.0;
-  __pyx_t_1.XL_Z = 0.0;
+  __pyx_t_1.XL_Z = 9.80274;
   __pyx_t_1.G_X = 0.0;
   __pyx_t_1.G_Y = 0.0;
   __pyx_t_1.G_Z = 0.0;
@@ -1284,60 +1292,92 @@ static PyObject *__pyx_f_7wrapper_call(CYTHON_UNUSED int __pyx_skip_dispatch) {
 
   /* "wrapper.pyx":38
  * 
- * 	cdef SensorData IMU0_data = SensorData(XL_X=1,XL_Y=0,XL_Z=0,G_X=0,G_Y=0,G_Z=0)
- * 	cdef SensorData IMU1_data = SensorData(XL_X=0.5,XL_Y=0,XL_Z=0,G_X=0,G_Y=0,G_Z=0)             # <<<<<<<<<<<<<<
+ * 	cdef SensorData IMU0_data = SensorData(XL_X=0,XL_Y=0,XL_Z=9.80274,G_X=0,G_Y=0,G_Z=0)
+ * 	cdef SensorData IMU1_data = SensorData(XL_X=0,XL_Y=0,XL_Z=9.80274,G_X=0,G_Y=0,G_Z=0)             # <<<<<<<<<<<<<<
  * 
- * 	calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta)
+ * 	cdef Position p = Position(X=0,Y=0,Z=0)
  */
-  __pyx_t_1.XL_X = 0.5;
+  __pyx_t_1.XL_X = 0.0;
   __pyx_t_1.XL_Y = 0.0;
-  __pyx_t_1.XL_Z = 0.0;
+  __pyx_t_1.XL_Z = 9.80274;
   __pyx_t_1.G_X = 0.0;
   __pyx_t_1.G_Y = 0.0;
   __pyx_t_1.G_Z = 0.0;
   __pyx_v_IMU1_data = __pyx_t_1;
 
   /* "wrapper.pyx":40
- * 	cdef SensorData IMU1_data = SensorData(XL_X=0.5,XL_Y=0,XL_Z=0,G_X=0,G_Y=0,G_Z=0)
- * 
- * 	calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta)             # <<<<<<<<<<<<<<
- * 
- * 	cdef Position p = Position(X=0,Y=0,Z=0)
- */
-  calculateCorrectedState((&__pyx_v_IMU0_data), (&__pyx_v_IMU1_data), __pyx_v_timeDelta);
-
-  /* "wrapper.pyx":42
- * 	calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta)
+ * 	cdef SensorData IMU1_data = SensorData(XL_X=0,XL_Y=0,XL_Z=9.80274,G_X=0,G_Y=0,G_Z=0)
  * 
  * 	cdef Position p = Position(X=0,Y=0,Z=0)             # <<<<<<<<<<<<<<
- * 	print(returnCurrentPosition(&p))
- * 	print(p.X)
+ * 
+ * 	for i in range (0,104):
  */
   __pyx_t_2.X = 0.0;
   __pyx_t_2.Y = 0.0;
   __pyx_t_2.Z = 0.0;
   __pyx_v_p = __pyx_t_2;
 
-  /* "wrapper.pyx":43
+  /* "wrapper.pyx":42
+ * 	cdef Position p = Position(X=0,Y=0,Z=0)
  * 
- * 	cdef Position p = Position(X=0,Y=0,Z=0)
- * 	print(returnCurrentPosition(&p))             # <<<<<<<<<<<<<<
- * 	print(p.X)
+ * 	for i in range (0,104):             # <<<<<<<<<<<<<<
+ * 		calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta)
+ * 		returnCurrentPosition(&p)
  */
-  __pyx_t_3 = PyFloat_FromDouble(returnCurrentPosition((&__pyx_v_p))); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 43, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_PrintOne(0, __pyx_t_3) < 0) __PYX_ERR(0, 43, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  for (__pyx_t_3 = 0; __pyx_t_3 < 0x68; __pyx_t_3+=1) {
+    __pyx_v_i = __pyx_t_3;
 
-  /* "wrapper.pyx":44
- * 	cdef Position p = Position(X=0,Y=0,Z=0)
- * 	print(returnCurrentPosition(&p))
- * 	print(p.X)             # <<<<<<<<<<<<<<
+    /* "wrapper.pyx":43
+ * 
+ * 	for i in range (0,104):
+ * 		calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta)             # <<<<<<<<<<<<<<
+ * 		returnCurrentPosition(&p)
+ * 		print(p.X)
  */
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_p.X); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 44, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_PrintOne(0, __pyx_t_3) < 0) __PYX_ERR(0, 44, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    calculateCorrectedState((&__pyx_v_IMU0_data), (&__pyx_v_IMU1_data), __pyx_v_timeDelta);
+
+    /* "wrapper.pyx":44
+ * 	for i in range (0,104):
+ * 		calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta)
+ * 		returnCurrentPosition(&p)             # <<<<<<<<<<<<<<
+ * 		print(p.X)
+ * 		print(p.Y)
+ */
+    (void)(returnCurrentPosition((&__pyx_v_p)));
+
+    /* "wrapper.pyx":45
+ * 		calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta)
+ * 		returnCurrentPosition(&p)
+ * 		print(p.X)             # <<<<<<<<<<<<<<
+ * 		print(p.Y)
+ * 		print(p.Z)
+ */
+    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_p.X); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 45, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (__Pyx_PrintOne(0, __pyx_t_4) < 0) __PYX_ERR(0, 45, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+    /* "wrapper.pyx":46
+ * 		returnCurrentPosition(&p)
+ * 		print(p.X)
+ * 		print(p.Y)             # <<<<<<<<<<<<<<
+ * 		print(p.Z)
+ */
+    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_p.Y); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 46, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (__Pyx_PrintOne(0, __pyx_t_4) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+    /* "wrapper.pyx":47
+ * 		print(p.X)
+ * 		print(p.Y)
+ * 		print(p.Z)             # <<<<<<<<<<<<<<
+ */
+    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_p.Z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (__Pyx_PrintOne(0, __pyx_t_4) < 0) __PYX_ERR(0, 47, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  }
 
   /* "wrapper.pyx":32
  * 
@@ -1351,7 +1391,7 @@ static PyObject *__pyx_f_7wrapper_call(CYTHON_UNUSED int __pyx_skip_dispatch) {
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
   __Pyx_AddTraceback("wrapper.call", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
@@ -1461,11 +1501,15 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {&__pyx_n_s_print, __pyx_k_print, sizeof(__pyx_k_print), 0, 0, 1, 1},
+  {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 42, __pyx_L1_error)
   return 0;
+  __pyx_L1_error:;
+  return -1;
 }
 
 static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
@@ -1798,6 +1842,34 @@ end:
 }
 #endif
 
+/* PyObjectGetAttrStr */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
+    PyTypeObject* tp = Py_TYPE(obj);
+    if (likely(tp->tp_getattro))
+        return tp->tp_getattro(obj, attr_name);
+#if PY_MAJOR_VERSION < 3
+    if (likely(tp->tp_getattr))
+        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
+#endif
+    return PyObject_GetAttr(obj, attr_name);
+}
+#endif
+
+/* GetBuiltinName */
+static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
+    PyObject* result = __Pyx_PyObject_GetAttrStr(__pyx_b, name);
+    if (unlikely(!result)) {
+        PyErr_Format(PyExc_NameError,
+#if PY_MAJOR_VERSION >= 3
+            "name '%U' is not defined", name);
+#else
+            "name '%.200s' is not defined", PyString_AS_STRING(name));
+#endif
+    }
+    return result;
+}
+
 /* PyDictVersioning */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
 static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
@@ -1821,20 +1893,6 @@ static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UIN
     if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
         return 0;
     return obj_dict_version == __Pyx_get_object_dict_version(obj);
-}
-#endif
-
-/* PyObjectGetAttrStr */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
-    PyTypeObject* tp = Py_TYPE(obj);
-    if (likely(tp->tp_getattro))
-        return tp->tp_getattro(obj, attr_name);
-#if PY_MAJOR_VERSION < 3
-    if (likely(tp->tp_getattr))
-        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
-#endif
-    return PyObject_GetAttr(obj, attr_name);
 }
 #endif
 
@@ -2091,6 +2149,28 @@ bad:
     Py_XDECREF(py_frame);
 }
 
+/* CIntFromPyVerify */
+#define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)\
+    __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 0)
+#define __PYX_VERIFY_RETURN_INT_EXC(target_type, func_type, func_value)\
+    __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 1)
+#define __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, exc)\
+    {\
+        func_type value = func_value;\
+        if (sizeof(target_type) < sizeof(func_type)) {\
+            if (unlikely(value != (func_type) (target_type) value)) {\
+                func_type zero = 0;\
+                if (exc && unlikely(value == (func_type)-1 && PyErr_Occurred()))\
+                    return (target_type) -1;\
+                if (is_unsigned && unlikely(value < zero))\
+                    goto raise_neg_overflow;\
+                else\
+                    goto raise_overflow;\
+            }\
+        }\
+        return (target_type) value;\
+    }
+
 /* Print */
 #if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
 static PyObject *__Pyx_GetStdout(void) {
@@ -2196,103 +2276,6 @@ bad:
     return -1;
 }
 #endif
-
-/* PrintOne */
-#if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
-static int __Pyx_PrintOne(PyObject* f, PyObject *o) {
-    if (!f) {
-        if (!(f = __Pyx_GetStdout()))
-            return -1;
-    }
-    Py_INCREF(f);
-    if (PyFile_SoftSpace(f, 0)) {
-        if (PyFile_WriteString(" ", f) < 0)
-            goto error;
-    }
-    if (PyFile_WriteObject(o, f, Py_PRINT_RAW) < 0)
-        goto error;
-    if (PyFile_WriteString("\n", f) < 0)
-        goto error;
-    Py_DECREF(f);
-    return 0;
-error:
-    Py_DECREF(f);
-    return -1;
-    /* the line below is just to avoid C compiler
-     * warnings about unused functions */
-    return __Pyx_Print(f, NULL, 0);
-}
-#else
-static int __Pyx_PrintOne(PyObject* stream, PyObject *o) {
-    int res;
-    PyObject* arg_tuple = PyTuple_Pack(1, o);
-    if (unlikely(!arg_tuple))
-        return -1;
-    res = __Pyx_Print(stream, arg_tuple, 1);
-    Py_DECREF(arg_tuple);
-    return res;
-}
-#endif
-
-/* CIntToPy */
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
-#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
-    const long neg_one = (long) -1, const_zero = (long) 0;
-#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
-#pragma GCC diagnostic pop
-#endif
-    const int is_unsigned = neg_one > const_zero;
-    if (is_unsigned) {
-        if (sizeof(long) < sizeof(long)) {
-            return PyInt_FromLong((long) value);
-        } else if (sizeof(long) <= sizeof(unsigned long)) {
-            return PyLong_FromUnsignedLong((unsigned long) value);
-#ifdef HAVE_LONG_LONG
-        } else if (sizeof(long) <= sizeof(unsigned PY_LONG_LONG)) {
-            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
-#endif
-        }
-    } else {
-        if (sizeof(long) <= sizeof(long)) {
-            return PyInt_FromLong((long) value);
-#ifdef HAVE_LONG_LONG
-        } else if (sizeof(long) <= sizeof(PY_LONG_LONG)) {
-            return PyLong_FromLongLong((PY_LONG_LONG) value);
-#endif
-        }
-    }
-    {
-        int one = 1; int little = (int)*(unsigned char *)&one;
-        unsigned char *bytes = (unsigned char *)&value;
-        return _PyLong_FromByteArray(bytes, sizeof(long),
-                                     little, !is_unsigned);
-    }
-}
-
-/* CIntFromPyVerify */
-#define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)\
-    __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 0)
-#define __PYX_VERIFY_RETURN_INT_EXC(target_type, func_type, func_value)\
-    __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 1)
-#define __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, exc)\
-    {\
-        func_type value = func_value;\
-        if (sizeof(target_type) < sizeof(func_type)) {\
-            if (unlikely(value != (func_type) (target_type) value)) {\
-                func_type zero = 0;\
-                if (exc && unlikely(value == (func_type)-1 && PyErr_Occurred()))\
-                    return (target_type) -1;\
-                if (is_unsigned && unlikely(value < zero))\
-                    goto raise_neg_overflow;\
-                else\
-                    goto raise_overflow;\
-            }\
-        }\
-        return (target_type) value;\
-    }
 
 /* CIntFromPy */
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *x) {
@@ -2488,6 +2471,81 @@ raise_neg_overflow:
     PyErr_SetString(PyExc_OverflowError,
         "can't convert negative value to long");
     return (long) -1;
+}
+
+/* PrintOne */
+#if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
+static int __Pyx_PrintOne(PyObject* f, PyObject *o) {
+    if (!f) {
+        if (!(f = __Pyx_GetStdout()))
+            return -1;
+    }
+    Py_INCREF(f);
+    if (PyFile_SoftSpace(f, 0)) {
+        if (PyFile_WriteString(" ", f) < 0)
+            goto error;
+    }
+    if (PyFile_WriteObject(o, f, Py_PRINT_RAW) < 0)
+        goto error;
+    if (PyFile_WriteString("\n", f) < 0)
+        goto error;
+    Py_DECREF(f);
+    return 0;
+error:
+    Py_DECREF(f);
+    return -1;
+    /* the line below is just to avoid C compiler
+     * warnings about unused functions */
+    return __Pyx_Print(f, NULL, 0);
+}
+#else
+static int __Pyx_PrintOne(PyObject* stream, PyObject *o) {
+    int res;
+    PyObject* arg_tuple = PyTuple_Pack(1, o);
+    if (unlikely(!arg_tuple))
+        return -1;
+    res = __Pyx_Print(stream, arg_tuple, 1);
+    Py_DECREF(arg_tuple);
+    return res;
+}
+#endif
+
+/* CIntToPy */
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
+    const long neg_one = (long) -1, const_zero = (long) 0;
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic pop
+#endif
+    const int is_unsigned = neg_one > const_zero;
+    if (is_unsigned) {
+        if (sizeof(long) < sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(long) <= sizeof(unsigned long)) {
+            return PyLong_FromUnsignedLong((unsigned long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(long) <= sizeof(unsigned PY_LONG_LONG)) {
+            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
+#endif
+        }
+    } else {
+        if (sizeof(long) <= sizeof(long)) {
+            return PyInt_FromLong((long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(long) <= sizeof(PY_LONG_LONG)) {
+            return PyLong_FromLongLong((PY_LONG_LONG) value);
+#endif
+        }
+    }
+    {
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        unsigned char *bytes = (unsigned char *)&value;
+        return _PyLong_FromByteArray(bytes, sizeof(long),
+                                     little, !is_unsigned);
+    }
 }
 
 /* CIntFromPy */

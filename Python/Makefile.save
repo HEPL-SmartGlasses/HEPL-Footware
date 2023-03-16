@@ -21,8 +21,7 @@ all: clean libprocessing.so python
 
 debug: updateProcessing all run
 
-run:
-	python3 main.py
+run: w_avg_b0_magw_avg_b0_mag
 
 copy:
 	cp $(OTHERDIR)../Inc/processing.h .

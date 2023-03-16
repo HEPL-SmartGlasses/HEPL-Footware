@@ -7,6 +7,7 @@
 
 #include <processing.h>
 #include "stdlib.h"
+#include "stdio.h"
 #include "math.h"
 
 float w_avg_b0_mag;
@@ -520,11 +521,13 @@ void calculateCorrectedState(
 
 float returnCurrentPosition(Position* current_pos) {
 
+	printf("x_curr_f32[0] %0.6f  x_curr_f32[3] %0.6f \n", x_curr_f32[0],  x_curr_f32[3]);
+
 	current_pos->X = (x_curr_f32[0] + x_curr_f32[3]) / 2;
 	current_pos->Y = (x_curr_f32[1] + x_curr_f32[4]) / 2;
 	current_pos->Z = (x_curr_f32[2] + x_curr_f32[5]) / 2;
 	// Returns avg of two position values, units of meters
-	return x_curr_f32[0];
+	return 0.;
 }
 
 void calculateAvgAngularRate(
@@ -546,7 +549,8 @@ void calculateRotationMatrix(
 	// Determine change in rotation angle / 2 (units of radians)
 	float rotation_angle_div_2 = w_avg_b0_mag * timeDelta * deg2rad / 2;
 
-	float q1_3_scaling_term = (float)sin(rotation_angle_div_2) / w_avg_b0_mag; // reduce number of calculations
+	float q1_3_scaling_term = (w_avg_b0_mag) ?
+			(float)sin(rotation_angle_div_2) / w_avg_b0_mag : w_avg_b0_mag; // reduce number of calculations
 
 	// Determine change in rotation as quaternion
 	float delta_q_f32[4];
@@ -586,6 +590,7 @@ void calculateStateEstimation(void) { // TODO Verify this
 	arm_mat_mult_f32(&B_matrix, &u_curr, &temp2); // B*u(k) --> (12x6) * (6x1)
 
 	arm_mat_add_f32(&temp1, &temp2, &x_curr); // x(k) = F*x(k-1) + B*u(k)
+
 }
 
 void calculateStateEstimationErrorCovariance(void) {
