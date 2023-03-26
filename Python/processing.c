@@ -18,8 +18,8 @@ enum PHASE {SWING, STANCE};
  *  Matrix data
  */
 float m_b0_f32[3] = { // (3x1)
-		0.01, //TODO change to reflect actual distance between sensors
-		0.01,
+		0.0127,
+		-0.0127,
 		0,
 }; // Relative position of IMUs in board frame (b0, so relative to IMU0), unit (m)
 
@@ -53,8 +53,8 @@ float x_prev_f32[12] = { // (12x1)
 		0,
 		0,
 
-		0,
-		0,
+		0.0127,
+		-0.0127,
 		0,
 
 		0,
@@ -71,6 +71,10 @@ float x_curr_f32[12] = { // (12x1)
 		0,
 		0,
 
+		0.0127,
+		-0.0127,
+		0,
+
 		0,
 		0,
 		0,
@@ -78,11 +82,7 @@ float x_curr_f32[12] = { // (12x1)
 		0,
 		0,
 		0,
-
-		0,
-		0,
-		0,
-}; // State variable at k, x = [r0_n, r1n, v0_n, v1_n]^T, init to all zeros
+}; // State variable at k, x = [r0_n, r1_n, v0_n, v1_n]^T, init to all zeros
 
 float F_matrix_f32[144] = { // (12x12)
 		1,0,0,	0,0,0,	1,0,0,	0,0,0,
@@ -223,31 +223,31 @@ float K_stance_f32[144] = { // (12x12)
 }; // Kalman Gain K_2, stance phase, init to all zeros
 
 float R_swing_f32[36] = { // (6x6)
-		0,0,0, 0,0,0,
-		0,0,0, 0,0,0,
-		0,0,0, 0,0,0,
+		1,0,0,	0,0,0,
+		0,1,0,	0,0,0,
+		0,0,1,	0,0,0,
 
-		0,0,0, 0,0,0,
-		0,0,0, 0,0,0,
-		0,0,0, 0,0,0,
+		0,0,0,	1,0,0,
+		0,0,0,	0,1,0,
+		0,0,0,	0,0,1,
 }; // Observation noise covariance, swing phase, init to // TODO fill this in
 
 float R_stance_f32[144] = { // (12x12)
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		1,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,1,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,1,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	1,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,1,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,1,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	1,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,1,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,1,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	1,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,1,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,1,
 }; // Observation noise covariance, stance phase, init to // TODO fill this in
 
 float P_prev_f32[] = { // (12x12)
@@ -461,6 +461,8 @@ void init_processing(void) {
 	numCols = 12;
 	arm_mat_init_f32(&Q_prev, numRows, numCols, Q_prev_f32);
 
+	init_tuning();
+
 }
 
 void calculateCorrectedState(
@@ -485,6 +487,10 @@ void calculateCorrectedState(
 
 
 	enum PHASE phase = SWING; // TODO set phase to determined value
+	if (w_avg_b0_mag < 0.03) {
+		phase = STANCE;
+		printf("Stance\n");
+	}
 	// Determine Swing or Stance Phase
 
 	arm_matrix_instance_f32 Hi; // (Nx12)
@@ -493,6 +499,7 @@ void calculateCorrectedState(
 	arm_matrix_instance_f32 Ki; // (12xN)
 
 	if (phase == SWING) {
+		printf("Swing\n");
 		// N = 6
 		Hi = H_swing;
 		Zi = Z_swing;
@@ -516,12 +523,9 @@ void calculateCorrectedState(
 	calculateOptimalEstimationErrorCovariance(&Ki, &Hi);	// P(k) = (I - Ki(k)*Hi)*P-(k)
 
 	updatePreviousMatrices();	// update x_prev, P_prev, (Q_prev?) // TODO Add Q_prev to this?
-
 }
 
 float returnCurrentPosition(Position* current_pos) {
-
-	printf("x_curr_f32[0] %0.6f  x_curr_f32[3] %0.6f \n", x_curr_f32[0],  x_curr_f32[3]);
 
 	current_pos->X = (x_curr_f32[0] + x_curr_f32[3]) / 2;
 	current_pos->Y = (x_curr_f32[1] + x_curr_f32[4]) / 2;
@@ -671,6 +675,7 @@ void calculateOptimalStateEstimation(
 	 */
 
 	float* tempNx1_f32 = (float*)malloc(N * sizeof(float));
+//	float tempNx1_f32[] = {0,0,0,0,0,0};
 	arm_matrix_instance_f32 tempNx1;
 	arm_mat_init_f32(&tempNx1, N, 1, tempNx1_f32); // Will temporarily store some operation results, (Nx1)
 
@@ -686,6 +691,7 @@ void calculateOptimalStateEstimation(
 
 	// Calculate correction factor
 	arm_mat_sub_f32(Zi, &tempNx1, &tempNx1);	// (Zi(k) - Hi*x(k)) -> tempNx1
+//	printf("%f %f %f\n", tempNx1_f32[3], tempNx1_f32[4], tempNx1_f32[5]); // should be ideally zero
 
 	// Weight correction factor by Kalman Gain
 	arm_mat_mult_f32(Ki, &tempNx1, &temp12x1); // Ki(k) * (Zi(k) - Hi*x(k)) --> (12xN) * (Nx1) -> temp12x1
@@ -886,4 +892,21 @@ void cross_product(
 	c->pData[0] = aData[1] * bData[2] - aData[2] * bData[1];
 	c->pData[1] = aData[2] * bData[0] - aData[0] * bData[2];
 	c->pData[2] = aData[0] * bData[1] - aData[1] * bData[0];
+}
+
+void init_tuning(void) {
+	float q_val = 0.000000036;
+	float r_val = 0.05;
+
+	int i;
+	for(i = 0; i < 12; ++i) { // Update specific indices of Q_prev
+		Q_prev_f32[(7*i)] = q_val;
+	}
+
+	for(i = 0; i < 12; ++i) { // Update specific indices of Q_prev
+			R_stance_f32[(7*i)] = r_val;
+	}
+	for(i = 0; i < 6; ++i) { // Update specific indices of Q_prev
+			R_swing_f32[(7*i)] = r_val;
+	}
 }

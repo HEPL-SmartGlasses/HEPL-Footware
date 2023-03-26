@@ -24,6 +24,9 @@ debug: updateProcessing all run
 run:
 	python3 main.py
 
+plot:
+	python3	plot.py
+
 copy:
 	cp $(OTHERDIR)../Inc/processing.h .
 	cp $(DSPDIR)arm_math.h .

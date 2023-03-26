@@ -17,7 +17,7 @@ typedef struct {
 	float Z;
 } Position;
 
-#define g (float)9.80274 // Local acceleration due to gravity
+#define g (float)9.80274 // Local acceleration due to gravity: Ann Arbor = 9.80274 //TODO
 #define deg2rad (float) 0.0174532925199 // pi / 180
 
 /*
@@ -153,5 +153,7 @@ void cross_product(
 		arm_matrix_instance_f32* a,
 		arm_matrix_instance_f32* b,
 		arm_matrix_instance_f32* c);
+
+void init_tuning(void);
 
 #endif /* INC_PROCESSING_H_ */

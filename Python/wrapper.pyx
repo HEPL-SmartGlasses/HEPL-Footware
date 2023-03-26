@@ -29,23 +29,19 @@ cdef extern from "processing.h":
 	float returnCurrentPosition(Position* p) 
 	
 
-cpdef call(float XL_X0):
+cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, float G_Zin, float timeDelta):
 	init_processing()
 
-	timeDelta = 1.0/104
-
-	cdef SensorData IMU0_data = SensorData(XL_X=XL_X0,XL_Y=0,XL_Z=0,G_X=0,G_Y=0,G_Z=0)
-	cdef SensorData IMU1_data = SensorData(XL_X=0,XL_Y=0,XL_Z=0,G_X=0,G_Y=0,G_Z=0)
+	cdef SensorData IMU0_data = SensorData(XL_X=XL_Xin,XL_Y=XL_Yin,XL_Z=XL_Zin,G_X=G_Xin,G_Y=G_Yin,G_Z=G_Zin)
 
 	cdef Position p = Position(X=0,Y=0,Z=0)
 
-	for i in range (0,104):
-		calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta)
+	calculateCorrectedState(&IMU0_data, &IMU0_data, timeDelta)
 		
-	printPosition(&p)	
+	
+	returnCurrentPosition(&p)
+	#printPosition(&p)
+	return [p.X, p.Y, p.Z]	
 
 cdef printPosition(Position* p):
-	returnCurrentPosition(&p)
-	print(p.X)
-	print(p.Y)
-	print(p.Z)
+	print('x: ' + str(p.X) + ' y: ' + str(p.Y) + ' z: ' + str(p.Z))
