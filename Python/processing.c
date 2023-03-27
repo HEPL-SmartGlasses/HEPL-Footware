@@ -223,31 +223,31 @@ float K_stance_f32[144] = { // (12x12)
 }; // Kalman Gain K_2, stance phase, init to all zeros
 
 float R_swing_f32[36] = { // (6x6)
-		1,0,0,	0,0,0,
-		0,1,0,	0,0,0,
-		0,0,1,	0,0,0,
+		0.05,0,0,	0,0,0,
+		0,0.05,0,	0,0,0,
+		0,0,0.05,	0,0,0,
 
-		0,0,0,	1,0,0,
-		0,0,0,	0,1,0,
-		0,0,0,	0,0,1,
+		0,0,0,	0.05,0,0,
+		0,0,0,	0,0.05,0,
+		0,0,0,	0,0,0.05,
 }; // Observation noise covariance, swing phase, init to // TODO fill this in
 
 float R_stance_f32[144] = { // (12x12)
-		1,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,1,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,1,	0,0,0,	0,0,0,	0,0,0,
+		0.01,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0.01,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0.01,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	1,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,1,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,1,	0,0,0,	0,0,0,
+		0,0,0,	0.01,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0.01,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0.01,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	1,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,1,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,1,	0,0,0,
+		0,0,0,	0,0,0,	0.01,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0.01,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0.01,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	1,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,1,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,1,
+		0,0,0,	0,0,0,	0,0,0,	0.01,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0.01,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0.01,
 }; // Observation noise covariance, stance phase, init to // TODO fill this in
 
 float P_prev_f32[] = { // (12x12)
@@ -305,22 +305,25 @@ float P_minus_f32[] = { // (12x12)
 }; // A priori covariance, k, init to zeros
 
 float Q_prev_f32[] = { // (12x12)
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0.0005,0,0,	0.0005,0,0,	0.00005,0,0,	0.00005,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0.0005,0,0,	0.0005,0,0,	0.00005,0,0,	0.00005,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
+		0.00005,0,0,	0.00005,0,0,	0.0005,0,0,	0.0005,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0.00005,0,0,	0.00005,0,0,	0.0005,0,0,	0.0005,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 }; // Process noise covariance, k-1, init to // TODO fill this in
+
+float measured_f32[3] = {0,0,0,}; // r0 x, y, z
+float correction_f32[3] = {0,0,0,}; // r0 x, y, z
 
 /*
  *  Matrix instances
@@ -461,7 +464,7 @@ void init_processing(void) {
 	numCols = 12;
 	arm_mat_init_f32(&Q_prev, numRows, numCols, Q_prev_f32);
 
-	init_tuning();
+	//init_tuning();
 
 }
 
@@ -485,9 +488,10 @@ void calculateCorrectedState(
 	calculateStateEstimationErrorCovariance();	// P-(k) = F*P(k-1)*F^T + Q(k-1)
 	// TODO need to tune process noise covariance matrix Q(k-1)
 
+	printf("%f", w_avg_b0_mag);
 
 	enum PHASE phase = SWING; // TODO set phase to determined value
-	if (w_avg_b0_mag < 0.03) {
+	if (w_avg_b0_mag < 4) {
 		phase = STANCE;
 		printf("Stance\n");
 	}
@@ -531,6 +535,22 @@ float returnCurrentPosition(Position* current_pos) {
 	current_pos->Y = (x_curr_f32[1] + x_curr_f32[4]) / 2;
 	current_pos->Z = (x_curr_f32[2] + x_curr_f32[5]) / 2;
 	// Returns avg of two position values, units of meters
+	return 0.;
+}
+
+float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos) {
+	meas->X = measured_f32[0];
+	meas->Y = measured_f32[1];
+	meas->Z = measured_f32[2];
+
+	pred->X = correction_f32[0];
+	pred->Y = correction_f32[1];
+	pred->Z = correction_f32[2];
+
+	optimal_pos->X = (x_curr_f32[0] + x_curr_f32[3]) / 2;
+	optimal_pos->Y = (x_curr_f32[1] + x_curr_f32[4]) / 2;
+	optimal_pos->Z = (x_curr_f32[2] + x_curr_f32[5]) / 2;
+
 	return 0.;
 }
 
@@ -594,6 +614,10 @@ void calculateStateEstimation(void) { // TODO Verify this
 	arm_mat_mult_f32(&B_matrix, &u_curr, &temp2); // B*u(k) --> (12x6) * (6x1)
 
 	arm_mat_add_f32(&temp1, &temp2, &x_curr); // x(k) = F*x(k-1) + B*u(k)
+
+	measured_f32[0] = (x_curr_f32[0] + x_curr_f32[3]) / 2;
+	measured_f32[1] = (x_curr_f32[1] + x_curr_f32[4]) / 2;
+	measured_f32[2] = (x_curr_f32[2] + x_curr_f32[5]) / 2;
 
 }
 
@@ -692,6 +716,10 @@ void calculateOptimalStateEstimation(
 	// Calculate correction factor
 	arm_mat_sub_f32(Zi, &tempNx1, &tempNx1);	// (Zi(k) - Hi*x(k)) -> tempNx1
 //	printf("%f %f %f\n", tempNx1_f32[3], tempNx1_f32[4], tempNx1_f32[5]); // should be ideally zero
+
+	correction_f32[0] = (tempNx1_f32[0] + tempNx1_f32[3]) / 2;
+	correction_f32[1] = (tempNx1_f32[1] + tempNx1_f32[4]) / 2;
+	correction_f32[2] = (tempNx1_f32[2] + tempNx1_f32[5]) / 2;
 
 	// Weight correction factor by Kalman Gain
 	arm_mat_mult_f32(Ki, &tempNx1, &temp12x1); // Ki(k) * (Zi(k) - Hi*x(k)) --> (12xN) * (Nx1) -> temp12x1
@@ -894,13 +922,17 @@ void cross_product(
 	c->pData[2] = aData[0] * bData[1] - aData[1] * bData[0];
 }
 
-void init_tuning(void) {
-	float q_val = 0.000000036;
-	float r_val = 0.05;
+void init_tuning(void) { // Janky, probably don't use
+	float q_val = 0.00008;
+	float r_val = 0.5;
 
 	int i;
 	for(i = 0; i < 12; ++i) { // Update specific indices of Q_prev
 		Q_prev_f32[(7*i)] = q_val;
+
+	}
+	for(i = 0; i < 6; ++i) {
+		Q_prev_f32[6 + (13*i)] = q_val;
 	}
 
 	for(i = 0; i < 12; ++i) { // Update specific indices of Q_prev

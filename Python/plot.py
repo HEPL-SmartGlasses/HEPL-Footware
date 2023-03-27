@@ -4,54 +4,71 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from mat4py import loadmat
-from scipy import integrate
 
 def plot():
 	fig = plt.figure()
-	ax = plt.axes(projection='3d')
 
 	hepl = pd.read_csv("processed.csv")
 	f = loadmat("./PyShoe Dataset/pyshoe/data/vicon/raw/2018-02-22-10-10-56/processed_data.mat")
 	gt = np.array(f['gt'])
-	gt_x = [(x[0]) for x in gt]
-	gt_y = [(x[1]) for x in gt]
-	gt_z = [(x[2]) for x in gt]
+	gt_x = [(x[0]-gt[0][0]) for x in gt]
+	gt_y = [(x[1]-gt[0][1]) for x in gt]
+	gt_z = [(x[2]-gt[0][2]) for x in gt]
 
-	ts = np.array(f['ts'])
+	gt_x = gt_x[0:len(hepl.ts)]
+	gt_y = gt_y[0:len(hepl.ts)]
+	gt_z = gt_z[0:len(hepl.ts)]
 
-	#imu = np.array(f['imu'])
-	#imu_x = np.array([x[3] for x in imu])
-	#imu_y = np.array([x[4] for x in imu])
-	#imu_z = np.array([x[5] for x in imu])
+	imu = np.array(f['imu'])
+	imu_x = [(x[3]-imu[0][3]) for x in imu]
+	imu_x = imu_x[0:len(hepl.ts)]
 
-	#scale = np.array(1.0)
-	#imu_x = integrate.cumtrapz(integrate.cumtrapz(imu_x, ts, axis=0), np.resize(ts,3246))/scale
-	#imu_y = integrate.cumtrapz(integrate.cumtrapz(imu_y, ts, axis=0), np.resize(ts,3246))/scale
-	#imu_z = integrate.cumtrapz(integrate.cumtrapz(imu_z, ts, axis=0), np.resize(ts,3246))/scale
-	one = np.array(1)
-	hundred = np.array(100)
-	diff = np.abs((np.array(hepl)-gt)*hundred/gt)
+# Calculate Error
+	rmse = np.sqrt(((np.array([hepl.optX, hepl.optY, hepl.optZ]) - np.array([gt_x, gt_y, gt_z])) ** 2).mean())
+	print("RMSE:")
+	print(rmse)
+	mae = np.abs(np.array([hepl.optX, hepl.optY, hepl.optZ]) - np.array([gt_x, gt_y, gt_z])).mean()
+	print("MAE:")
+	print(mae)
 
-	#for i in diff:
-	#	print("X: " + str(i[0]) + "% Y: " + str(i[1]) + "% Z: " + str(i[2]) + "%")
+# 3D Plot
+	ax = fig.add_subplot(2, 2, 1, projection='3d')
+	ax.plot3D(hepl.optX, hepl.optY, hepl.optZ, 'blue')
+	ax.plot3D(gt_x, gt_y, gt_z, 'black')
 
-	ax.plot3D(hepl.X, hepl.Y, hepl.Z, 'blue')
-	ax.plot3D(gt_x, gt_y, gt_z, 'red')
-	#ax.plot3D(imu_x, imu_y, imu_z, 'gray')
-	plt.xlabel('X')
-	plt.ylabel('Y')
+# X Plot
+	scale = 1
+	axX = fig.add_subplot(2, 2, 2)
+	axX.plot(hepl.ts, gt_x * np.array(scale), 'black')
+	axX.plot(hepl.ts, hepl.optX * np.array(scale), 'blue')
+	axX.plot(hepl.ts, hepl.measX * np.array(scale), 'red')
+	axX.plot(hepl.ts, hepl.predX * np.array(scale), 'green')
+	#axX.plot(hepl.ts, imu_x, 'gray')
+	axX.set_xlabel('Time (s)')
+	axX.set_ylabel('X Position (m)')
+	axX.legend(['Truth', 'HEPL Optimal', 'HEPL Measured', 'HEPL Prediction'], fontsize=6)
 
-	ax.legend(['HEPL', 'Truth'])
-#	ax.legend(['HEPL', 'Truth', 'IMU'])
+# Y Plot
+	axY = fig.add_subplot(2, 2, 3)
+	axY.plot(hepl.ts, gt_y, 'black')
+	axY.plot(hepl.ts, hepl.optY, 'blue')
+	axY.plot(hepl.ts, hepl.measY, 'red')
+	axY.plot(hepl.ts, hepl.predX, 'green')
+	axY.set_xlabel('Time (s)')
+	axY.set_ylabel('Y Position (m)')
+	axY.legend(['Truth', 'HEPL Optimal', 'HEPL Measured', 'HEPL Prediction'], fontsize=6)
 
+# Z Plot
+	axZ = fig.add_subplot(2, 2, 4)
+	axZ.plot(hepl.ts, gt_z, 'black')
+	axZ.plot(hepl.ts, hepl.optZ, 'blue')
+	axZ.plot(hepl.ts, hepl.measZ, 'red')
+	axZ.plot(hepl.ts, hepl.predZ, 'green')
+	axZ.set_xlabel('Time (s)')
+	axZ.set_ylabel('Z Position (m)')
+	axZ.legend(['Truth', 'HEPL Optimal', 'HEPL Measured', 'HEPL Prediction'], fontsize=6)
+
+# Save Image
+	fig.suptitle('HEPL Eval\n' + 'RMSE: ' + str(rmse) + '\nMAE: ' + str(mae))
+	plt.tight_layout()
 	plt.savefig('Processed.png')
-
-	fig2 = plt.figure()
-	ax2 = plt.axes()
-	ax2.plot(ts, gt_z, 'red')
-	#ax2.plot(ts, hepl.Z, 'blue')
-	plt.xlabel('Time (s)')
-	plt.ylabel('Z Position (m)')
-	#ax2.legend(['HEPL', 'Truth'])
-
-	plt.savefig('Processed_Z.png')

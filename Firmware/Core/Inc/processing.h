@@ -17,7 +17,7 @@ typedef struct {
 	float Z;
 } Position;
 
-#define g (float)9.80274 // Local acceleration due to gravity: Ann Arbor = 9.80274 //TODO
+#define g (float)9.8029 // Local acceleration due to gravity: Ann Arbor = 9.80274 //TODO
 #define deg2rad (float) 0.0174532925199 // pi / 180
 
 /*
@@ -37,6 +37,8 @@ void calculateCorrectedState(
  *  Returns r_avg based on r0 & r1, units of meters
  */
 float returnCurrentPosition(Position* current_pos);
+
+float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos);
 
 /*
  *  Determine Avg Angular Rate from IMU data
