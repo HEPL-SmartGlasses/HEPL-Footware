@@ -38,7 +38,7 @@ void calculateCorrectedState(
  */
 float returnCurrentPosition(Position* current_pos);
 
-float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos);
+float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos, Position* K_gain);
 
 /*
  *  Determine Avg Angular Rate from IMU data

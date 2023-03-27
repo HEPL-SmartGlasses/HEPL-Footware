@@ -20,7 +20,7 @@ imu = np.array(f['imu']) # 0-2: w, 3-5: a
 ts = np.array(f['ts'])
 gt = np.array(f['gt'])
 prev_t = 0
-pos = pd.DataFrame([], columns=['measX','measY','measZ','predX','predY','predZ','optX','optY','optZ','ts'])
+pos = pd.DataFrame([], columns=['measX','measY','measZ','predX','predY','predZ','optX','optY','optZ','gainX','gainY','gainZ','ts'])
 
 for row in imu:
 	if line_count == 0:
@@ -34,7 +34,7 @@ for row in imu:
 
 	ret = call(row[3], row[4], row[5], row[0], row[1], row[3], (ts[line_count-2]-prev_t))
 	#ret += gt[0]
-	new = pd.DataFrame(data={'measX':ret[0],'measY':ret[1],'measZ':ret[2],'predX':ret[3],'predY':ret[4],'predZ':ret[5],'optX':ret[6],'optY':ret[7],'optZ':ret[8], 'ts': ts[line_count-2]}, index=[0])
+	new = pd.DataFrame(data={'measX':ret[0],'measY':ret[1],'measZ':ret[2],'predX':ret[3],'predY':ret[4],'predZ':ret[5],'optX':ret[6],'optY':ret[7],'optZ':ret[8],'gainX':ret[9],'gainY':ret[10],'gainZ':ret[11], 'ts': ts[line_count-2]}, index=[0])
 	pos = pd.concat([pos, new], ignore_index = True)
 	prev_t = ts[line_count-2]
 

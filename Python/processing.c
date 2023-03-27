@@ -322,8 +322,9 @@ float Q_prev_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 }; // Process noise covariance, k-1, init to // TODO fill this in
 
-float measured_f32[3] = {0,0,0,}; // r0 x, y, z
-float correction_f32[3] = {0,0,0,}; // r0 x, y, z
+float measured_f32[3] = {0,0,0,}; 	// x, y, z
+float correction_f32[3] = {0,0,0,}; // x, y, z
+float gain_f32[3] = {0,0,0,}; // x, y, z
 
 /*
  *  Matrix instances
@@ -538,7 +539,7 @@ float returnCurrentPosition(Position* current_pos) {
 	return 0.;
 }
 
-float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos) {
+float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos, Position* K_gain) {
 	meas->X = measured_f32[0];
 	meas->Y = measured_f32[1];
 	meas->Z = measured_f32[2];
@@ -550,6 +551,10 @@ float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos) {
 	optimal_pos->X = (x_curr_f32[0] + x_curr_f32[3]) / 2;
 	optimal_pos->Y = (x_curr_f32[1] + x_curr_f32[4]) / 2;
 	optimal_pos->Z = (x_curr_f32[2] + x_curr_f32[5]) / 2;
+
+	K_gain->X = gain_f32[0];
+	K_gain->Y = gain_f32[1];
+	K_gain->Z = gain_f32[2];
 
 	return 0.;
 }
@@ -685,6 +690,10 @@ void calculateGainMatrix(
 	// Free malloc'd memory
 	free(temp12xN_f32);
 	free(tempNxN_f32);
+
+	gain_f32[0] = (Ki->pData[0] + Ki->pData[3]) / 2;
+	gain_f32[1] = (Ki->pData[1] + Ki->pData[4]) / 2;
+	gain_f32[2] = (Ki->pData[2] + Ki->pData[5]) / 2;
 }
 
 void calculateOptimalStateEstimation(

@@ -26,7 +26,7 @@ cdef extern from "processing.h":
 	void calculateStateEstimationErrorCovariance()
 	void updatePreviousMatrices()
 	
-	float returnDebugOutput(Position* meas, Position* pred, Position* opt) 
+	float returnDebugOutput(Position* meas, Position* pred, Position* opt, Position* gain) 
 	
 
 cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, float G_Zin, float timeDelta):
@@ -37,13 +37,14 @@ cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, f
 	cdef Position meas = Position(X=0,Y=0,Z=0)
 	cdef Position pred = Position(X=0,Y=0,Z=0)
 	cdef Position opt = Position(X=0,Y=0,Z=0)
+	cdef Position gain = Position(X=0,Y=0,Z=0)
 
 	calculateCorrectedState(&IMU0_data, &IMU0_data, timeDelta)
 		
 	
-	returnDebugOutput(&meas, &pred, &opt)
+	returnDebugOutput(&meas, &pred, &opt, &gain)
 	
-	return [meas.X,meas.Y,meas.Z,pred.X,pred.Y,pred.Z,opt.X,opt.Y,opt.Z]	
+	return [meas.X,meas.Y,meas.Z,pred.X,pred.Y,pred.Z,opt.X,opt.Y,opt.Z,gain.X,gain.Y,gain.Z]	
 
 #cdef printPosition(Position* p):
 	#print('x: ' + str(p.X) + ' y: ' + str(p.Y) + ' z: ' + str(p.Z))
