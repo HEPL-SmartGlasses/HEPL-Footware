@@ -15,4 +15,4 @@ Run ```make debug``` to compile processing.c from STM32 and run the plot util
 
 Run ```make run``` if you want to skip compile step
 
-The plot utility prints useful info to the console and makes a plot image called "Processing.png" using "processing.csv"
+The plot utility prints useful info to the console and makes a plot image called "Processed.png" using "processed.csv"
