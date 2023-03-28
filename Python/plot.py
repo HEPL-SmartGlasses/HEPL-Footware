@@ -37,37 +37,39 @@ def plot():
 	ax.plot3D(gt_x, gt_y, gt_z, 'black')
 
 # X Plot
-	scale = 10
+	scale = 1
+	imuscale = 0.1
 	axX = fig.add_subplot(4, 2, 2)
 	axX.plot(hepl.ts, gt_x * np.array(scale), 'black')
 	axX.plot(hepl.ts, hepl.optX * np.array(scale), 'blue')
-	axX.plot(hepl.ts, hepl.measX * np.array(scale), 'red')
-	axX.plot(hepl.ts, hepl.corrX * np.array(scale), 'green')
-	axX.plot(hepl.ts, imu_x, 'yellow')
+	axX.plot(hepl.ts, hepl.corrX * np.array(scale), 'red')
+	axX.plot(hepl.ts, hepl.predX * np.array(scale), 'green')
+	axX.plot(hepl.ts, hepl.predX * hepl.gainX * np.array(500), 'gray')
+	axX.plot(hepl.ts, imu_x * np.array(imuscale), 'yellow')
 	axX.set_xlabel('Time (s)')
 	axX.set_ylabel('X Position (m)')
 	#axX.legend(['Truth', 'HEPL Optimal', 'HEPL Measured', 'HEPL Correction'], fontsize=12)
-	axX.legend(['Truth', 'HEPL Optimal', 'HEPL Measured', 'HEPL Correction','IMU'], fontsize=12)
+	axX.legend(['Truth', 'HEPL Optimal','HEPL Correction', 'HEPL Prediction','Gain * Prediction','IMU'], fontsize=12)
 
 # Y Plot
 	axY = fig.add_subplot(4, 2, 3)
 	axY.plot(hepl.ts, gt_y, 'black')
 	axY.plot(hepl.ts, hepl.optY, 'blue')
-	axY.plot(hepl.ts, hepl.measY, 'red')
-	axY.plot(hepl.ts, hepl.corrY, 'green')
+	axY.plot(hepl.ts, hepl.corrY, 'red')
+	axY.plot(hepl.ts, hepl.predY, 'green')
 	axY.set_xlabel('Time (s)')
 	axY.set_ylabel('Y Position (m)')
-	axY.legend(['Truth', 'HEPL Optimal', 'HEPL Measured', 'HEPL Correction'], fontsize=12)
+	axY.legend(['Truth', 'HEPL Optimal','HEPL Correction', 'HEPL Prediction'], fontsize=12)
 
 # Z Plot
 	axZ = fig.add_subplot(4, 2, 4)
 	axZ.plot(hepl.ts, gt_z, 'black')
 	axZ.plot(hepl.ts, hepl.optZ, 'blue')
-	axZ.plot(hepl.ts, hepl.measZ, 'red')
-	axZ.plot(hepl.ts, hepl.corrZ, 'green')
+	axZ.plot(hepl.ts, hepl.corrZ, 'red')
+	axZ.plot(hepl.ts, hepl.predZ, 'green')
 	axZ.set_xlabel('Time (s)')
 	axZ.set_ylabel('Z Position (m)')
-	axZ.legend(['Truth', 'HEPL Optimal', 'HEPL Measured', 'HEPL Correction'], fontsize=12)
+	axZ.legend(['Truth', 'HEPL Optimal','HEPL Correction','HEPL Prediction'], fontsize=12)
 
 # Gain Plot
 	axK = fig.add_subplot(4, 2, 5)

@@ -1186,6 +1186,7 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 
 /* Module declarations from 'wrapper' */
+static PyObject *__pyx_f_7wrapper_init(int __pyx_skip_dispatch); /*proto*/
 static PyObject *__pyx_f_7wrapper_call(float, float, float, float, float, float, float, int __pyx_skip_dispatch); /*proto*/
 #define __Pyx_MODULE_NAME "wrapper"
 extern int __pyx_module_is_main_wrapper;
@@ -1234,22 +1235,100 @@ static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_timeDelta;
-static PyObject *__pyx_pf_7wrapper_call(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_XL_Xin, float __pyx_v_XL_Yin, float __pyx_v_XL_Zin, float __pyx_v_G_Xin, float __pyx_v_G_Yin, float __pyx_v_G_Zin, float __pyx_v_timeDelta); /* proto */
+static PyObject *__pyx_pf_7wrapper_init(CYTHON_UNUSED PyObject *__pyx_self); /* proto */
+static PyObject *__pyx_pf_7wrapper_2call(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_XL_Xin, float __pyx_v_XL_Yin, float __pyx_v_XL_Zin, float __pyx_v_G_Xin, float __pyx_v_G_Yin, float __pyx_v_G_Zin, float __pyx_v_timeDelta); /* proto */
 /* Late includes */
 
-/* "wrapper.pyx":38
+/* "wrapper.pyx":37
+ * 	float returnDebugOutput(Position* corr, Position* pred, Position* opt, Position* gain, Position* w_avg, Quaternion* quat)
  * 
- * 
- * cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, float G_Zin, float timeDelta):             # <<<<<<<<<<<<<<
+ * cpdef init():             # <<<<<<<<<<<<<<
  * 	init_processing()
  * 
  */
 
-static PyObject *__pyx_pw_7wrapper_1call(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_7wrapper_1init(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_f_7wrapper_init(CYTHON_UNUSED int __pyx_skip_dispatch) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("init", 0);
+
+  /* "wrapper.pyx":38
+ * 
+ * cpdef init():
+ * 	init_processing()             # <<<<<<<<<<<<<<
+ * 
+ * cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, float G_Zin, float timeDelta):
+ */
+  init_processing();
+
+  /* "wrapper.pyx":37
+ * 	float returnDebugOutput(Position* corr, Position* pred, Position* opt, Position* gain, Position* w_avg, Quaternion* quat)
+ * 
+ * cpdef init():             # <<<<<<<<<<<<<<
+ * 	init_processing()
+ * 
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7wrapper_1init(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_7wrapper_1init(PyObject *__pyx_self, CYTHON_UNUSED PyObject *unused) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("init (wrapper)", 0);
+  __pyx_r = __pyx_pf_7wrapper_init(__pyx_self);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7wrapper_init(CYTHON_UNUSED PyObject *__pyx_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("init", 0);
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __pyx_f_7wrapper_init(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("wrapper.init", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "wrapper.pyx":40
+ * 	init_processing()
+ * 
+ * cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, float G_Zin, float timeDelta):             # <<<<<<<<<<<<<<
+ * 
+ * 	cdef SensorData IMU0_data = SensorData(XL_X=XL_Xin,XL_Y=XL_Yin,XL_Z=XL_Zin,G_X=G_Xin,G_Y=G_Yin,G_Z=G_Zin)
+ */
+
+static PyObject *__pyx_pw_7wrapper_3call(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yin, float __pyx_v_XL_Zin, float __pyx_v_G_Xin, float __pyx_v_G_Yin, float __pyx_v_G_Zin, float __pyx_v_timeDelta, CYTHON_UNUSED int __pyx_skip_dispatch) {
   SensorData __pyx_v_IMU0_data;
-  Position __pyx_v_meas;
   Position __pyx_v_corr;
+  Position __pyx_v_pred;
   Position __pyx_v_opt;
   Position __pyx_v_gain;
   Position __pyx_v_w_avg;
@@ -1286,21 +1365,12 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("call", 0);
 
-  /* "wrapper.pyx":39
- * 
+  /* "wrapper.pyx":42
  * cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, float G_Zin, float timeDelta):
- * 	init_processing()             # <<<<<<<<<<<<<<
- * 
- * 	cdef SensorData IMU0_data = SensorData(XL_X=XL_Xin,XL_Y=XL_Yin,XL_Z=XL_Zin,G_X=G_Xin,G_Y=G_Yin,G_Z=G_Zin)
- */
-  init_processing();
-
-  /* "wrapper.pyx":41
- * 	init_processing()
  * 
  * 	cdef SensorData IMU0_data = SensorData(XL_X=XL_Xin,XL_Y=XL_Yin,XL_Z=XL_Zin,G_X=G_Xin,G_Y=G_Yin,G_Z=G_Zin)             # <<<<<<<<<<<<<<
  * 
- * 	cdef Position meas = Position(X=0,Y=0,Z=0)
+ * 	cdef Position corr = Position(X=0,Y=0,Z=0)
  */
   __pyx_t_1.XL_X = __pyx_v_XL_Xin;
   __pyx_t_1.XL_Y = __pyx_v_XL_Yin;
@@ -1310,24 +1380,12 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
   __pyx_t_1.G_Z = __pyx_v_G_Zin;
   __pyx_v_IMU0_data = __pyx_t_1;
 
-  /* "wrapper.pyx":43
+  /* "wrapper.pyx":44
  * 	cdef SensorData IMU0_data = SensorData(XL_X=XL_Xin,XL_Y=XL_Yin,XL_Z=XL_Zin,G_X=G_Xin,G_Y=G_Yin,G_Z=G_Zin)
  * 
- * 	cdef Position meas = Position(X=0,Y=0,Z=0)             # <<<<<<<<<<<<<<
- * 	cdef Position corr = Position(X=0,Y=0,Z=0)
- * 	cdef Position opt = Position(X=0,Y=0,Z=0)
- */
-  __pyx_t_2.X = 0.0;
-  __pyx_t_2.Y = 0.0;
-  __pyx_t_2.Z = 0.0;
-  __pyx_v_meas = __pyx_t_2;
-
-  /* "wrapper.pyx":44
- * 
- * 	cdef Position meas = Position(X=0,Y=0,Z=0)
  * 	cdef Position corr = Position(X=0,Y=0,Z=0)             # <<<<<<<<<<<<<<
+ * 	cdef Position pred = Position(X=0,Y=0,Z=0)
  * 	cdef Position opt = Position(X=0,Y=0,Z=0)
- * 	cdef Position gain = Position(X=0,Y=0,Z=0)
  */
   __pyx_t_2.X = 0.0;
   __pyx_t_2.Y = 0.0;
@@ -1335,8 +1393,20 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
   __pyx_v_corr = __pyx_t_2;
 
   /* "wrapper.pyx":45
- * 	cdef Position meas = Position(X=0,Y=0,Z=0)
+ * 
  * 	cdef Position corr = Position(X=0,Y=0,Z=0)
+ * 	cdef Position pred = Position(X=0,Y=0,Z=0)             # <<<<<<<<<<<<<<
+ * 	cdef Position opt = Position(X=0,Y=0,Z=0)
+ * 	cdef Position gain = Position(X=0,Y=0,Z=0)
+ */
+  __pyx_t_2.X = 0.0;
+  __pyx_t_2.Y = 0.0;
+  __pyx_t_2.Z = 0.0;
+  __pyx_v_pred = __pyx_t_2;
+
+  /* "wrapper.pyx":46
+ * 	cdef Position corr = Position(X=0,Y=0,Z=0)
+ * 	cdef Position pred = Position(X=0,Y=0,Z=0)
  * 	cdef Position opt = Position(X=0,Y=0,Z=0)             # <<<<<<<<<<<<<<
  * 	cdef Position gain = Position(X=0,Y=0,Z=0)
  * 	cdef Position w_avg = Position(X=0,Y=0,Z=0)
@@ -1346,8 +1416,8 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
   __pyx_t_2.Z = 0.0;
   __pyx_v_opt = __pyx_t_2;
 
-  /* "wrapper.pyx":46
- * 	cdef Position corr = Position(X=0,Y=0,Z=0)
+  /* "wrapper.pyx":47
+ * 	cdef Position pred = Position(X=0,Y=0,Z=0)
  * 	cdef Position opt = Position(X=0,Y=0,Z=0)
  * 	cdef Position gain = Position(X=0,Y=0,Z=0)             # <<<<<<<<<<<<<<
  * 	cdef Position w_avg = Position(X=0,Y=0,Z=0)
@@ -1358,7 +1428,7 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
   __pyx_t_2.Z = 0.0;
   __pyx_v_gain = __pyx_t_2;
 
-  /* "wrapper.pyx":47
+  /* "wrapper.pyx":48
  * 	cdef Position opt = Position(X=0,Y=0,Z=0)
  * 	cdef Position gain = Position(X=0,Y=0,Z=0)
  * 	cdef Position w_avg = Position(X=0,Y=0,Z=0)             # <<<<<<<<<<<<<<
@@ -1370,7 +1440,7 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
   __pyx_t_2.Z = 0.0;
   __pyx_v_w_avg = __pyx_t_2;
 
-  /* "wrapper.pyx":48
+  /* "wrapper.pyx":49
  * 	cdef Position gain = Position(X=0,Y=0,Z=0)
  * 	cdef Position w_avg = Position(X=0,Y=0,Z=0)
  * 	cdef Quaternion quat = Quaternion(W=0,X=0,Y=0,Z=0)             # <<<<<<<<<<<<<<
@@ -1383,7 +1453,7 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
   __pyx_t_3.Z = 0.0;
   __pyx_v_quat = __pyx_t_3;
 
-  /* "wrapper.pyx":50
+  /* "wrapper.pyx":51
  * 	cdef Quaternion quat = Quaternion(W=0,X=0,Y=0,Z=0)
  * 
  * 	cdef float w_mag = 0;             # <<<<<<<<<<<<<<
@@ -1392,73 +1462,73 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
  */
   __pyx_v_w_mag = 0.0;
 
-  /* "wrapper.pyx":52
+  /* "wrapper.pyx":53
  * 	cdef float w_mag = 0;
  * 
  * 	calculateCorrectedState(&IMU0_data, &IMU0_data, timeDelta)             # <<<<<<<<<<<<<<
  * 
- * 	w_mag = returnDebugOutput(&meas, &corr, &opt, &gain, &w_avg, &quat)
+ * 	w_mag = returnDebugOutput(&corr, &pred, &opt, &gain, &w_avg, &quat)
  */
   calculateCorrectedState((&__pyx_v_IMU0_data), (&__pyx_v_IMU0_data), __pyx_v_timeDelta);
 
-  /* "wrapper.pyx":54
+  /* "wrapper.pyx":55
  * 	calculateCorrectedState(&IMU0_data, &IMU0_data, timeDelta)
  * 
- * 	w_mag = returnDebugOutput(&meas, &corr, &opt, &gain, &w_avg, &quat)             # <<<<<<<<<<<<<<
+ * 	w_mag = returnDebugOutput(&corr, &pred, &opt, &gain, &w_avg, &quat)             # <<<<<<<<<<<<<<
  * 
- * 	return [meas.X,meas.Y,meas.Z,corr.X,corr.Y,corr.Z,opt.X,opt.Y,opt.Z,gain.X,gain.Y,gain.Z,w_avg.X,w_avg.Y,w_avg.Z,quat.W,quat.X,quat.Y,quat.Z,w_mag]
+ * 	return [corr.X,corr.Y,corr.Z,pred.X,pred.Y,pred.Z,opt.X,opt.Y,opt.Z,gain.X,gain.Y,gain.Z,w_avg.X,w_avg.Y,w_avg.Z,quat.W,quat.X,quat.Y,quat.Z,w_mag]
  */
-  __pyx_v_w_mag = returnDebugOutput((&__pyx_v_meas), (&__pyx_v_corr), (&__pyx_v_opt), (&__pyx_v_gain), (&__pyx_v_w_avg), (&__pyx_v_quat));
+  __pyx_v_w_mag = returnDebugOutput((&__pyx_v_corr), (&__pyx_v_pred), (&__pyx_v_opt), (&__pyx_v_gain), (&__pyx_v_w_avg), (&__pyx_v_quat));
 
-  /* "wrapper.pyx":56
- * 	w_mag = returnDebugOutput(&meas, &corr, &opt, &gain, &w_avg, &quat)
+  /* "wrapper.pyx":57
+ * 	w_mag = returnDebugOutput(&corr, &pred, &opt, &gain, &w_avg, &quat)
  * 
- * 	return [meas.X,meas.Y,meas.Z,corr.X,corr.Y,corr.Z,opt.X,opt.Y,opt.Z,gain.X,gain.Y,gain.Z,w_avg.X,w_avg.Y,w_avg.Z,quat.W,quat.X,quat.Y,quat.Z,w_mag]             # <<<<<<<<<<<<<<
+ * 	return [corr.X,corr.Y,corr.Z,pred.X,pred.Y,pred.Z,opt.X,opt.Y,opt.Z,gain.X,gain.Y,gain.Z,w_avg.X,w_avg.Y,w_avg.Z,quat.W,quat.X,quat.Y,quat.Z,w_mag]             # <<<<<<<<<<<<<<
  * 
  * #cdef printPosition(Position* p):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_meas.X); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_corr.X); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_meas.Y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_corr.Y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = PyFloat_FromDouble(__pyx_v_meas.Z); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_6 = PyFloat_FromDouble(__pyx_v_corr.Z); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = PyFloat_FromDouble(__pyx_v_corr.X); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_7 = PyFloat_FromDouble(__pyx_v_pred.X); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_8 = PyFloat_FromDouble(__pyx_v_corr.Y); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_8 = PyFloat_FromDouble(__pyx_v_pred.Y); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
-  __pyx_t_9 = PyFloat_FromDouble(__pyx_v_corr.Z); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_9 = PyFloat_FromDouble(__pyx_v_pred.Z); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_10 = PyFloat_FromDouble(__pyx_v_opt.X); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_10 = PyFloat_FromDouble(__pyx_v_opt.X); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_11 = PyFloat_FromDouble(__pyx_v_opt.Y); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_11 = PyFloat_FromDouble(__pyx_v_opt.Y); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_12 = PyFloat_FromDouble(__pyx_v_opt.Z); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_12 = PyFloat_FromDouble(__pyx_v_opt.Z); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
-  __pyx_t_13 = PyFloat_FromDouble(__pyx_v_gain.X); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_13 = PyFloat_FromDouble(__pyx_v_gain.X); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_13);
-  __pyx_t_14 = PyFloat_FromDouble(__pyx_v_gain.Y); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_14 = PyFloat_FromDouble(__pyx_v_gain.Y); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_14);
-  __pyx_t_15 = PyFloat_FromDouble(__pyx_v_gain.Z); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_15 = PyFloat_FromDouble(__pyx_v_gain.Z); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_15);
-  __pyx_t_16 = PyFloat_FromDouble(__pyx_v_w_avg.X); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_16 = PyFloat_FromDouble(__pyx_v_w_avg.X); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_16);
-  __pyx_t_17 = PyFloat_FromDouble(__pyx_v_w_avg.Y); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_17 = PyFloat_FromDouble(__pyx_v_w_avg.Y); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_17);
-  __pyx_t_18 = PyFloat_FromDouble(__pyx_v_w_avg.Z); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_18 = PyFloat_FromDouble(__pyx_v_w_avg.Z); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_18);
-  __pyx_t_19 = PyFloat_FromDouble(__pyx_v_quat.W); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_19 = PyFloat_FromDouble(__pyx_v_quat.W); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_19);
-  __pyx_t_20 = PyFloat_FromDouble(__pyx_v_quat.X); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_20 = PyFloat_FromDouble(__pyx_v_quat.X); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_20);
-  __pyx_t_21 = PyFloat_FromDouble(__pyx_v_quat.Y); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_21 = PyFloat_FromDouble(__pyx_v_quat.Y); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_21);
-  __pyx_t_22 = PyFloat_FromDouble(__pyx_v_quat.Z); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_22 = PyFloat_FromDouble(__pyx_v_quat.Z); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_22);
-  __pyx_t_23 = PyFloat_FromDouble(__pyx_v_w_mag); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_23 = PyFloat_FromDouble(__pyx_v_w_mag); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_23);
-  __pyx_t_24 = PyList_New(20); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_24 = PyList_New(20); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_24);
   __Pyx_GIVEREF(__pyx_t_4);
   PyList_SET_ITEM(__pyx_t_24, 0, __pyx_t_4);
@@ -1524,12 +1594,12 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
   __pyx_t_24 = 0;
   goto __pyx_L0;
 
-  /* "wrapper.pyx":38
- * 
- * 
- * cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, float G_Zin, float timeDelta):             # <<<<<<<<<<<<<<
+  /* "wrapper.pyx":40
  * 	init_processing()
  * 
+ * cpdef call(float XL_Xin, float XL_Yin, float XL_Zin, float G_Xin, float G_Yin, float G_Zin, float timeDelta):             # <<<<<<<<<<<<<<
+ * 
+ * 	cdef SensorData IMU0_data = SensorData(XL_X=XL_Xin,XL_Y=XL_Yin,XL_Z=XL_Zin,G_X=G_Xin,G_Y=G_Yin,G_Z=G_Zin)
  */
 
   /* function exit code */
@@ -1564,8 +1634,8 @@ static PyObject *__pyx_f_7wrapper_call(float __pyx_v_XL_Xin, float __pyx_v_XL_Yi
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_7wrapper_1call(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_7wrapper_1call(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_7wrapper_3call(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_7wrapper_3call(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   float __pyx_v_XL_Xin;
   float __pyx_v_XL_Yin;
   float __pyx_v_XL_Zin;
@@ -1612,41 +1682,41 @@ static PyObject *__pyx_pw_7wrapper_1call(PyObject *__pyx_self, PyObject *__pyx_a
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_XL_Yin)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 1); __PYX_ERR(0, 38, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 1); __PYX_ERR(0, 40, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_XL_Zin)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 2); __PYX_ERR(0, 38, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 2); __PYX_ERR(0, 40, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_G_Xin)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 3); __PYX_ERR(0, 38, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 3); __PYX_ERR(0, 40, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_G_Yin)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 4); __PYX_ERR(0, 38, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 4); __PYX_ERR(0, 40, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_G_Zin)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 5); __PYX_ERR(0, 38, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 5); __PYX_ERR(0, 40, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_timeDelta)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 6); __PYX_ERR(0, 38, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, 6); __PYX_ERR(0, 40, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "call") < 0)) __PYX_ERR(0, 38, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "call") < 0)) __PYX_ERR(0, 40, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 7) {
       goto __pyx_L5_argtuple_error;
@@ -1659,30 +1729,30 @@ static PyObject *__pyx_pw_7wrapper_1call(PyObject *__pyx_self, PyObject *__pyx_a
       values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
       values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
     }
-    __pyx_v_XL_Xin = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_XL_Xin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L3_error)
-    __pyx_v_XL_Yin = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_XL_Yin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L3_error)
-    __pyx_v_XL_Zin = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_XL_Zin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L3_error)
-    __pyx_v_G_Xin = __pyx_PyFloat_AsFloat(values[3]); if (unlikely((__pyx_v_G_Xin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L3_error)
-    __pyx_v_G_Yin = __pyx_PyFloat_AsFloat(values[4]); if (unlikely((__pyx_v_G_Yin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L3_error)
-    __pyx_v_G_Zin = __pyx_PyFloat_AsFloat(values[5]); if (unlikely((__pyx_v_G_Zin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L3_error)
-    __pyx_v_timeDelta = __pyx_PyFloat_AsFloat(values[6]); if (unlikely((__pyx_v_timeDelta == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L3_error)
+    __pyx_v_XL_Xin = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_XL_Xin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_XL_Yin = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_XL_Yin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_XL_Zin = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_XL_Zin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_G_Xin = __pyx_PyFloat_AsFloat(values[3]); if (unlikely((__pyx_v_G_Xin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_G_Yin = __pyx_PyFloat_AsFloat(values[4]); if (unlikely((__pyx_v_G_Yin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_G_Zin = __pyx_PyFloat_AsFloat(values[5]); if (unlikely((__pyx_v_G_Zin == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_timeDelta = __pyx_PyFloat_AsFloat(values[6]); if (unlikely((__pyx_v_timeDelta == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 38, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("call", 1, 7, 7, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 40, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("wrapper.call", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_7wrapper_call(__pyx_self, __pyx_v_XL_Xin, __pyx_v_XL_Yin, __pyx_v_XL_Zin, __pyx_v_G_Xin, __pyx_v_G_Yin, __pyx_v_G_Zin, __pyx_v_timeDelta);
+  __pyx_r = __pyx_pf_7wrapper_2call(__pyx_self, __pyx_v_XL_Xin, __pyx_v_XL_Yin, __pyx_v_XL_Zin, __pyx_v_G_Xin, __pyx_v_G_Yin, __pyx_v_G_Zin, __pyx_v_timeDelta);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_7wrapper_call(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_XL_Xin, float __pyx_v_XL_Yin, float __pyx_v_XL_Zin, float __pyx_v_G_Xin, float __pyx_v_G_Yin, float __pyx_v_G_Zin, float __pyx_v_timeDelta) {
+static PyObject *__pyx_pf_7wrapper_2call(CYTHON_UNUSED PyObject *__pyx_self, float __pyx_v_XL_Xin, float __pyx_v_XL_Yin, float __pyx_v_XL_Zin, float __pyx_v_G_Xin, float __pyx_v_G_Yin, float __pyx_v_G_Zin, float __pyx_v_timeDelta) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1691,7 +1761,7 @@ static PyObject *__pyx_pf_7wrapper_call(CYTHON_UNUSED PyObject *__pyx_self, floa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("call", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7wrapper_call(__pyx_v_XL_Xin, __pyx_v_XL_Yin, __pyx_v_XL_Zin, __pyx_v_G_Xin, __pyx_v_G_Yin, __pyx_v_G_Zin, __pyx_v_timeDelta, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7wrapper_call(__pyx_v_XL_Xin, __pyx_v_XL_Yin, __pyx_v_XL_Zin, __pyx_v_G_Xin, __pyx_v_G_Yin, __pyx_v_G_Zin, __pyx_v_timeDelta, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1709,7 +1779,8 @@ static PyObject *__pyx_pf_7wrapper_call(CYTHON_UNUSED PyObject *__pyx_self, floa
 }
 
 static PyMethodDef __pyx_methods[] = {
-  {"call", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_7wrapper_1call, METH_VARARGS|METH_KEYWORDS, 0},
+  {"init", (PyCFunction)__pyx_pw_7wrapper_1init, METH_NOARGS, 0},
+  {"call", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_7wrapper_3call, METH_VARARGS|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 

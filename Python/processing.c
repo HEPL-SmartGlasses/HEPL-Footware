@@ -224,13 +224,13 @@ float K_stance_f32[144] = { // (12x12)
 }; // Kalman Gain K_2, stance phase, init to all zeros
 
 float R_swing_f32[36] = { // (6x6)
-		0.05,0,0,	0,0,0,
-		0,0.05,0,	0,0,0,
-		0,0,0.05,	0,0,0,
+		0.01,0,0,	0,0,0,
+		0,0.01,0,	0,0,0,
+		0,0,0.01,	0,0,0,
 
-		0,0,0,	0.05,0,0,
-		0,0,0,	0,0.05,0,
-		0,0,0,	0,0,0.05,
+		0,0,0,	0.01,0,0,
+		0,0,0,	0,0.01,0,
+		0,0,0,	0,0,0.01,
 }; // Observation noise covariance, swing phase, init to // TODO fill this in
 
 float R_stance_f32[144] = { // (12x12)
@@ -305,29 +305,33 @@ float P_minus_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 }; // A priori covariance, k, init to zeros
 
+#define Tx 0.0001
+#define Ty 0.0001
+#define Tz 0.0001
+
 float Q_prev_f32[] = { // (12x12)
-		0.00005,0,0,	0.00005,0,0,	0.00005,0,0,	0.00005,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		Tx,0,0,		Tx,0,0,		Tx,0,0,		Tx,0,0,
+		0,Ty,0,		0,Ty,0,		0,Ty,0,		0,Ty,0,
+		0,0,Tz,		0,0,Tz,		0,0,Tz,		0,0,Tz,
 
-		0.00005,0,0,	0.00005,0,0,	0.00005,0,0,	0.00005,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		Tx,0,0,		Tx,0,0,		Tx,0,0,		Tx,0,0,
+		0,Ty,0,		0,Ty,0,		0,Ty,0,		0,Ty,0,
+		0,0,Tz,		0,0,Tz,		0,0,Tz,		0,0,Tz,
 
-		0.00005,0,0,	0.00005,0,0,	0.00005,0,0,	0.00005,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		Tx,Ty,0,	Tx,0,0,		Tx,0,0,		Tx,0,0,
+		0,Ty,0,		0,Ty,0,		0,Ty,0,		0,Ty,0,
+		0,0,Tz,		0,0,Tz,		0,0,Tz,		0,0,Tz,
 
-		0.00005,0,0,	0.00005,0,0,	0.00005,0,0,	0.00005,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		Tx,0,0,		Tx,0,0,		Tx,0,0,		Tx,0,0,
+		0,Ty,0,		0,Ty,0,		0,Ty,0,		0,Ty,0,
+		0,0,Tz,		0,0,Tz,		0,0,Tz,		0,0,Tz,
 }; // Process noise covariance, k-1, init to // TODO fill this in
 
 /*
  *  Debug arrays
  */
-float measured_f32[3] = {0,0,0,}; 	// x, y, z
-float correction_f32[3] = {0,0,0,}; // x, y, z
+float correction_f32[3] = {0,0,0,}; 	// x, y, z
+float prediction_f32[3] = {0,0,0,}; // x, y, z
 float gain_f32[3] = {0,0,0,}; // x, y, z
 
 /*
@@ -468,7 +472,7 @@ void init_processing(void) {
 	numCols = 12;
 	arm_mat_init_f32(&Q_prev, numRows, numCols, Q_prev_f32);
 
-	//initZUPT(); // Initialize ZUPT phase detector
+	initZUPT(); // Initialize ZUPT phase detector
 
 }
 
@@ -494,7 +498,7 @@ void calculateCorrectedState(
 
 	//printf("%f", w_avg_b0_mag);
 
-	enum PHASE phase = SWING;//detectZUPTPhase();
+	enum PHASE phase = detectZUPTPhase();
 
 	arm_matrix_instance_f32 Hi; // (Nx12)
 	arm_matrix_instance_f32 Zi; // (Nx1)
@@ -538,14 +542,14 @@ float returnCurrentPosition(Position* current_pos) {
 	return 0.;
 }
 
-float returnDebugOutput(Position* meas, Position* corr, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat) {
-	meas->X = measured_f32[0];
-	meas->Y = measured_f32[1];
-	meas->Z = measured_f32[2];
-
+float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat) {
 	corr->X = correction_f32[0];
 	corr->Y = correction_f32[1];
 	corr->Z = correction_f32[2];
+
+	pred->X = prediction_f32[0];
+	pred->Y = prediction_f32[1];
+	pred->Z = prediction_f32[2];
 
 	optimal_pos->X = (x_curr_f32[0] + x_curr_f32[3]) / 2;
 	optimal_pos->Y = (x_curr_f32[1] + x_curr_f32[4]) / 2;
@@ -596,15 +600,15 @@ void calculateRotationMatrix(
 	delta_q_f32[2] = w_avg_b0_f32[1] * q1_3_scaling_term;
 	delta_q_f32[3] = w_avg_b0_f32[2] * q1_3_scaling_term;
 
-	if (delta_q_f32[1]) {
-		printf("W:%f X:%f Y:%f Z:%f\n",delta_q_f32[0], delta_q_f32[1], delta_q_f32[2], delta_q_f32[3]);
-	}
+//	if (delta_q_f32[1]) {
+//		printf("W:%f X:%f Y:%f Z:%f\n",delta_q_f32[0], delta_q_f32[1], delta_q_f32[2], delta_q_f32[3]);
+//	}
 
 	// Calculate new normalized quaternion
 	arm_quaternion_product_single_f32(q_f32, delta_q_f32, q_f32); // q = q x delta_q
-	printf("W:%f X:%f Y:%f Z:%f\n",q_f32[0], q_f32[1], q_f32[2], q_f32[3]);
+//	printf("W:%f X:%f Y:%f Z:%f\n",q_f32[0], q_f32[1], q_f32[2], q_f32[3]);
 	arm_quaternion_normalize_f32(q_f32, q_f32, 1);	// q = q / |q|
-	printf("W:%f X:%f Y:%f Z:%f\n",q_f32[0], q_f32[1], q_f32[2], q_f32[3]);
+//	printf("W:%f X:%f Y:%f Z:%f\n",q_f32[0], q_f32[1], q_f32[2], q_f32[3]);
 
 	// Calculate rotation matrix from board frame to nav frame using quaternion
 	arm_quaternion2rotation_f32(q_f32, rotation_b0_n_f32, 1);
@@ -635,9 +639,9 @@ void calculateStateEstimation(void) { // TODO Verify this
 
 	arm_mat_add_f32(&temp1, &temp2, &x_curr); // x(k) = F*x(k-1) + B*u(k)
 
-	measured_f32[0] += (x_curr_f32[0] + x_curr_f32[3] - x_prev_f32[0] - x_prev_f32[3]) / 2;
-	measured_f32[1] += (x_curr_f32[1] + x_curr_f32[4] - x_prev_f32[1] - x_prev_f32[4]) / 2;
-	measured_f32[2] += (x_curr_f32[2] + x_curr_f32[5] - x_prev_f32[2] - x_prev_f32[5]) / 2;
+	prediction_f32[0] = (x_curr_f32[0] + x_curr_f32[3]) / 2;
+	prediction_f32[1] = (x_curr_f32[1] + x_curr_f32[4]) / 2;
+	prediction_f32[2] = (x_curr_f32[2] + x_curr_f32[5]) / 2;
 }
 
 void calculateStateEstimationErrorCovariance(void) {
@@ -949,8 +953,8 @@ void initZUPT(void) {
 	ZUPTHead = (ZUPTNode*)createZUPTNode(0.0);
 	ZUPTNode* tempNode = ZUPTHead;
 
-	int i = 0;
-	while (i < ZUPT_W-1) {
+	int i;
+	for(i = 0; i < ZUPT_W-1; ++i) {
 		tempNode->next = (struct ZUPTNode*)createZUPTNode(0.0);
 		tempNode = (ZUPTNode*)tempNode->next;
 	}
