@@ -9,10 +9,11 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "math.h"
+#include "assert.h"
 
-float w_avg_b0_mag;
+ZUPTNode* ZUPTHead; // Head to ZUPT linked list
 
-enum PHASE {SWING, STANCE};
+float w_avg_b0_mag; // Magnitude of average angular rate, board frame
 
 /*
  *  Matrix data
@@ -36,10 +37,10 @@ float w_avg_b0_f32[3] = { // (3x1)
 }; // Average angular rate vector of b0 relative to nav in b0, unit (deg/s)
 
 float q_f32[4] = { // (4x1)
-		1,
-		0,
-		0,
-		0,
+		0.86102826874,
+		-0.0704183079286,
+		-0.119457839164,
+		-0.489286685214,
 }; // Quaternion representing rotation of board frame from nav frame, init to Identity quaternion (1, 0, 0, 0)
 
 float rotation_b0_n_f32[9] = { // (3x3)
@@ -305,23 +306,26 @@ float P_minus_f32[] = { // (12x12)
 }; // A priori covariance, k, init to zeros
 
 float Q_prev_f32[] = { // (12x12)
-		0.0005,0,0,	0.0005,0,0,	0.00005,0,0,	0.00005,0,0,
+		0.00005,0,0,	0.00005,0,0,	0.00005,0,0,	0.00005,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
-		0.0005,0,0,	0.0005,0,0,	0.00005,0,0,	0.00005,0,0,
+		0.00005,0,0,	0.00005,0,0,	0.00005,0,0,	0.00005,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
-		0.00005,0,0,	0.00005,0,0,	0.0005,0,0,	0.0005,0,0,
+		0.00005,0,0,	0.00005,0,0,	0.00005,0,0,	0.00005,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
-		0.00005,0,0,	0.00005,0,0,	0.0005,0,0,	0.0005,0,0,
+		0.00005,0,0,	0.00005,0,0,	0.00005,0,0,	0.00005,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 }; // Process noise covariance, k-1, init to // TODO fill this in
 
+/*
+ *  Debug arrays
+ */
 float measured_f32[3] = {0,0,0,}; 	// x, y, z
 float correction_f32[3] = {0,0,0,}; // x, y, z
 float gain_f32[3] = {0,0,0,}; // x, y, z
@@ -350,7 +354,6 @@ arm_matrix_instance_f32 P_prev;			// A posteriori covariance, k-1
 arm_matrix_instance_f32 P_curr;			// A posteriori covariance, k
 arm_matrix_instance_f32 P_minus;		// A priori covariance, k
 arm_matrix_instance_f32 Q_prev;			// Process noise covariance, k-1
-
 
 
 void init_processing(void) {
@@ -465,7 +468,7 @@ void init_processing(void) {
 	numCols = 12;
 	arm_mat_init_f32(&Q_prev, numRows, numCols, Q_prev_f32);
 
-	//init_tuning();
+	//initZUPT(); // Initialize ZUPT phase detector
 
 }
 
@@ -489,14 +492,9 @@ void calculateCorrectedState(
 	calculateStateEstimationErrorCovariance();	// P-(k) = F*P(k-1)*F^T + Q(k-1)
 	// TODO need to tune process noise covariance matrix Q(k-1)
 
-	printf("%f", w_avg_b0_mag);
+	//printf("%f", w_avg_b0_mag);
 
-	enum PHASE phase = SWING; // TODO set phase to determined value
-	if (w_avg_b0_mag < 4) {
-		phase = STANCE;
-		printf("Stance\n");
-	}
-	// Determine Swing or Stance Phase
+	enum PHASE phase = SWING;//detectZUPTPhase();
 
 	arm_matrix_instance_f32 Hi; // (Nx12)
 	arm_matrix_instance_f32 Zi; // (Nx1)
@@ -511,6 +509,7 @@ void calculateCorrectedState(
 		Ri = R_swing;
 		Ki = K_swing;
 	} else { // phase == STANCE
+		printf("Stance\n");
 		// N = 12
 		Hi = H_stance;
 		Zi = Z_stance;
@@ -539,14 +538,14 @@ float returnCurrentPosition(Position* current_pos) {
 	return 0.;
 }
 
-float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos, Position* K_gain) {
+float returnDebugOutput(Position* meas, Position* corr, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat) {
 	meas->X = measured_f32[0];
 	meas->Y = measured_f32[1];
 	meas->Z = measured_f32[2];
 
-	pred->X = correction_f32[0];
-	pred->Y = correction_f32[1];
-	pred->Z = correction_f32[2];
+	corr->X = correction_f32[0];
+	corr->Y = correction_f32[1];
+	corr->Z = correction_f32[2];
 
 	optimal_pos->X = (x_curr_f32[0] + x_curr_f32[3]) / 2;
 	optimal_pos->Y = (x_curr_f32[1] + x_curr_f32[4]) / 2;
@@ -556,7 +555,16 @@ float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos, P
 	K_gain->Y = gain_f32[1];
 	K_gain->Z = gain_f32[2];
 
-	return 0.;
+	w_avg->X = w_avg_b0_f32[0];
+	w_avg->Y = w_avg_b0_f32[1];
+	w_avg->Z = w_avg_b0_f32[2];
+
+	quat->W = q_f32[0];
+	quat->X = q_f32[1];
+	quat->Y = q_f32[2];
+	quat->Z = q_f32[3];
+
+	return w_avg_b0_mag;
 }
 
 void calculateAvgAngularRate(
@@ -588,12 +596,19 @@ void calculateRotationMatrix(
 	delta_q_f32[2] = w_avg_b0_f32[1] * q1_3_scaling_term;
 	delta_q_f32[3] = w_avg_b0_f32[2] * q1_3_scaling_term;
 
+	if (delta_q_f32[1]) {
+		printf("W:%f X:%f Y:%f Z:%f\n",delta_q_f32[0], delta_q_f32[1], delta_q_f32[2], delta_q_f32[3]);
+	}
+
 	// Calculate new normalized quaternion
 	arm_quaternion_product_single_f32(q_f32, delta_q_f32, q_f32); // q = q x delta_q
+	printf("W:%f X:%f Y:%f Z:%f\n",q_f32[0], q_f32[1], q_f32[2], q_f32[3]);
 	arm_quaternion_normalize_f32(q_f32, q_f32, 1);	// q = q / |q|
+	printf("W:%f X:%f Y:%f Z:%f\n",q_f32[0], q_f32[1], q_f32[2], q_f32[3]);
 
 	// Calculate rotation matrix from board frame to nav frame using quaternion
 	arm_quaternion2rotation_f32(q_f32, rotation_b0_n_f32, 1);
+	printf("~~~~~~~~~~~~\n");
 }
 
 void calculateStateEstimation(void) { // TODO Verify this
@@ -620,10 +635,9 @@ void calculateStateEstimation(void) { // TODO Verify this
 
 	arm_mat_add_f32(&temp1, &temp2, &x_curr); // x(k) = F*x(k-1) + B*u(k)
 
-	measured_f32[0] = (x_curr_f32[0] + x_curr_f32[3]) / 2;
-	measured_f32[1] = (x_curr_f32[1] + x_curr_f32[4]) / 2;
-	measured_f32[2] = (x_curr_f32[2] + x_curr_f32[5]) / 2;
-
+	measured_f32[0] += (x_curr_f32[0] + x_curr_f32[3] - x_prev_f32[0] - x_prev_f32[3]) / 2;
+	measured_f32[1] += (x_curr_f32[1] + x_curr_f32[4] - x_prev_f32[1] - x_prev_f32[4]) / 2;
+	measured_f32[2] += (x_curr_f32[2] + x_curr_f32[5] - x_prev_f32[2] - x_prev_f32[5]) / 2;
 }
 
 void calculateStateEstimationErrorCovariance(void) {
@@ -726,15 +740,15 @@ void calculateOptimalStateEstimation(
 	arm_mat_sub_f32(Zi, &tempNx1, &tempNx1);	// (Zi(k) - Hi*x(k)) -> tempNx1
 //	printf("%f %f %f\n", tempNx1_f32[3], tempNx1_f32[4], tempNx1_f32[5]); // should be ideally zero
 
-	correction_f32[0] = (tempNx1_f32[0] + tempNx1_f32[3]) / 2;
-	correction_f32[1] = (tempNx1_f32[1] + tempNx1_f32[4]) / 2;
-	correction_f32[2] = (tempNx1_f32[2] + tempNx1_f32[5]) / 2;
-
 	// Weight correction factor by Kalman Gain
 	arm_mat_mult_f32(Ki, &tempNx1, &temp12x1); // Ki(k) * (Zi(k) - Hi*x(k)) --> (12xN) * (Nx1) -> temp12x1
 
+	correction_f32[0] += (temp12x1_f32[0] + temp12x1_f32[3]) / 2;
+	correction_f32[1] += (temp12x1_f32[1] + temp12x1_f32[4]) / 2;
+	correction_f32[2] += (temp12x1_f32[2] + temp12x1_f32[5]) / 2;
+
 	// Add weighted correction factor
-	arm_mat_add_f32(&x_curr, &temp12x1, &x_curr); // x(k) <= x_best(k) = x(k) * Ki(k) * (Zi(k) - Hi*x(k))
+	arm_mat_add_f32(&x_curr, &temp12x1, &x_curr); // x(k) <= x_best(k) = x(k) + Ki(k) * (Zi(k) - Hi*x(k))
 
 	/*
 	 *  Cleanup Section
@@ -931,23 +945,61 @@ void cross_product(
 	c->pData[2] = aData[0] * bData[1] - aData[1] * bData[0];
 }
 
-void init_tuning(void) { // Janky, probably don't use
-	float q_val = 0.00008;
-	float r_val = 0.5;
+void initZUPT(void) {
+	ZUPTHead = (ZUPTNode*)createZUPTNode(0.0);
+	ZUPTNode* tempNode = ZUPTHead;
 
+	int i = 0;
+	while (i < ZUPT_W-1) {
+		tempNode->next = (struct ZUPTNode*)createZUPTNode(0.0);
+		tempNode = (ZUPTNode*)tempNode->next;
+	}
+}
+
+enum PHASE detectZUPTPhase(void) {
+	/*
+	 *  1) Move head to next, free head
+	 *  2) Sum over W-1 nodes
+	 *  3) Append new node to end of list and add to sum
+	 *  4) Scale by 1/(sigma^2 * W) --> T
+	 *  5) Compare T to threshold, return stance if less than
+	 */
+
+	// 1) Move head to next, free head
+	assert(ZUPTHead != NULL);
+	ZUPTNode* tempNode = (ZUPTNode*)ZUPTHead->next;
+	free(ZUPTHead);
+	ZUPTHead = tempNode;
+
+	// 2)Sum over W-1 nodes
+	float sum = 0;
 	int i;
-	for(i = 0; i < 12; ++i) { // Update specific indices of Q_prev
-		Q_prev_f32[(7*i)] = q_val;
+	for(i = 0; i < ZUPT_W-2; ++i) {
+		assert(tempNode != NULL);
+		sum += tempNode->w_mag_sq;
+		tempNode = (ZUPTNode*)tempNode->next;
+	}
+	assert(tempNode != NULL);
+	sum += tempNode->w_mag_sq; // last node
 
-	}
-	for(i = 0; i < 6; ++i) {
-		Q_prev_f32[6 + (13*i)] = q_val;
-	}
+	// 3) Append new node to end of list and add to sum
+	tempNode->next = (struct ZUPTNode*)createZUPTNode(w_avg_b0_mag);
+	assert(tempNode->next != NULL);
+	tempNode = (ZUPTNode*)tempNode->next;
+	sum += tempNode->w_mag_sq;
 
-	for(i = 0; i < 12; ++i) { // Update specific indices of Q_prev
-			R_stance_f32[(7*i)] = r_val;
-	}
-	for(i = 0; i < 6; ++i) { // Update specific indices of Q_prev
-			R_swing_f32[(7*i)] = r_val;
-	}
+	// 4) Scale by 1/(sigma^2 * W) --> T
+	float T = sum * ZUPT_SCALE_FACTOR;
+
+	printf("%f ", T);
+
+	// 5) Compare T to threshold, return stance if less than
+	return (T < ZUPT_THRESHOLD) ? STANCE : SWING;
+}
+
+struct ZUPTNode* createZUPTNode(float w_mag) {
+	ZUPTNode* node = (ZUPTNode*)malloc(sizeof(ZUPTNode));
+
+	node->next = NULL;
+	node->w_mag_sq = w_mag * w_mag;
 }

@@ -17,8 +17,28 @@ typedef struct {
 	float Z;
 } Position;
 
-#define g (float)9.8029 // Local acceleration due to gravity: Ann Arbor = 9.80274 //TODO
+typedef struct {
+	float W;
+	float X;
+	float Y;
+	float Z;
+} Quaternion;
+
+typedef struct {
+	struct ZUPTNode* next;
+	float w_mag_sq;
+} ZUPTNode;
+
+enum PHASE {SWING, STANCE};
+
+#define g (float)9.8029 			 	// Local acceleration due to gravity: Ann Arbor = 9.80274 //TODO
 #define deg2rad (float) 0.0174532925199 // pi / 180
+
+// ZUPT
+#define ZUPT_W 5										// Angular Rate Energy Detector Window Size (# of samples)
+#define G_VARIANCE_SQ (float)0.1*0.1					// sigma_w^2
+#define ZUPT_SCALE_FACTOR 1.0/(G_VARIANCE_SQ * ZUPT_W)	// 1/(sigma_w^2 * W)
+#define ZUPT_THRESHOLD (float)50118.723362727			// Y' = 10^4.7
 
 /*
  *  Define matrix variables
@@ -38,7 +58,7 @@ void calculateCorrectedState(
  */
 float returnCurrentPosition(Position* current_pos);
 
-float returnDebugOutput(Position* meas, Position* pred, Position* optimal_pos, Position* K_gain);
+float returnDebugOutput(Position* meas, Position* corr, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat);
 
 /*
  *  Determine Avg Angular Rate from IMU data
@@ -156,6 +176,20 @@ void cross_product(
 		arm_matrix_instance_f32* b,
 		arm_matrix_instance_f32* c);
 
-void init_tuning(void);
+/*
+ *  Creates a linked-list of size W initialized to stance phase for ZUPT
+ */
+void initZUPT(void);
+
+/*
+ *  ZUPT phase detection function
+ *  	Uses Angular Rate Detection based on a linked-list
+ */
+enum PHASE detectZUPTPhase(void);
+
+/*
+ *  Allocates memory for the ZUPT detector linked-list
+ */
+struct ZUPTNode* createZUPTNode(float w_mag);
 
 #endif /* INC_PROCESSING_H_ */

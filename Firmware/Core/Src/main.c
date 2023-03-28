@@ -109,6 +109,8 @@ int main(void)
 
   init_processing();
 
+  //TODO send "ambientization" vals to chip
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
