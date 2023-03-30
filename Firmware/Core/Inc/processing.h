@@ -139,7 +139,8 @@ void calculateOptimalStateEstimation(
  */
 void calculateOptimalEstimationErrorCovariance(
 		arm_matrix_instance_f32* Ki, /*(12xN)*/
-		arm_matrix_instance_f32* Hi /*(Nx12)*/);
+		arm_matrix_instance_f32* Hi /*(Nx12)*/,
+		arm_matrix_instance_f32* Ri /*(NxN)*/);
 
 /*
  *  Multiplies applicable Identity matrices by timeDelta

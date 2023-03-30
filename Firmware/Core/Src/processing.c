@@ -577,7 +577,7 @@ void calculateCorrectedState(
 	optimal_f32[1] = (x_curr_f32[1] + x_curr_f32[4]) / 2;
 	optimal_f32[2] = (x_curr_f32[2] + x_curr_f32[5]) / 2;
 
-	calculateOptimalEstimationErrorCovariance(&Ki, &Hi);	// P(k) = (I - Ki(k)*Hi)*P-(k)
+	calculateOptimalEstimationErrorCovariance(&Ki, &Hi, &Ri);	// P(k) = (I - Ki(k)*Hi)*P-(k)
 
 	updatePreviousMatrices();	// update x_prev, P_prev, (Q_prev?) // TODO Add Q_prev to this?
 	phase_out = (float)phase;
@@ -837,11 +837,23 @@ void calculateOptimalStateEstimation(
 
 void calculateOptimalEstimationErrorCovariance(
 		arm_matrix_instance_f32* Ki, /*(12xN)*/
-		arm_matrix_instance_f32* Hi /*(Nx12)*/) { // TODO Verify this
+		arm_matrix_instance_f32* Hi, /*(Nx12)*/
+		arm_matrix_instance_f32* Ri /*(NxN)*/) { // TODO Verify this
+
+	uint16_t N = Hi->numRows;
 
 	/*
 	 *  Define Temporary Objects
 	 */
+
+	float* tempNx12_0_f32 = (float*)malloc(12 * N * sizeof(float));
+	arm_matrix_instance_f32 tempNx12_0;
+	arm_mat_init_f32(&tempNx12_0, N, 12, tempNx12_0_f32); // temp matrix (Nx12)
+	arm_mat_trans_f32(Ki, &tempNx12_0); // init to transpose of Ki
+
+	float* temp12xN_0_f32 = (float*)malloc(12 * N * sizeof(float));
+	arm_matrix_instance_f32 temp12xN_0;
+	arm_mat_init_f32(&temp12xN_0, 12, N, temp12xN_0_f32); // temp matrix (12xN)
 
 	float Identity12x12_f32[144] = {
 			1,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -863,19 +875,46 @@ void calculateOptimalEstimationErrorCovariance(
 	arm_matrix_instance_f32 Identity12x12;
 	arm_mat_init_f32(&Identity12x12, 12, 12, Identity12x12_f32); // 12x12 Identity matrix
 
-	float temp12x12_f32[144];
-	arm_matrix_instance_f32 temp12x12;
-	arm_mat_init_f32(&temp12x12, 12, 12, temp12x12_f32); // Temp 12x12 matrix
+	float temp12x12_0_f32[144];
+	arm_matrix_instance_f32 temp12x12_0;
+	arm_mat_init_f32(&temp12x12_0, 12, 12, temp12x12_0_f32); // Temp 12x12 matrix 0
+
+	float temp12x12_1_f32[144];
+	arm_matrix_instance_f32 temp12x12_1;
+	arm_mat_init_f32(&temp12x12_1, 12, 12, temp12x12_1_f32); // Temp 12x12 matrix 1
+
+	float temp12x12_2_f32[144];
+	arm_matrix_instance_f32 temp12x12_2;
+	arm_mat_init_f32(&temp12x12_2, 12, 12, temp12x12_2_f32); // Temp 12x12 matrix 2
+
+
 
 	/*
 	 *  Calculation Section
 	 */
 
-	arm_mat_mult_f32(Ki, Hi, &temp12x12);	// Ki(k)*Hi --> (12xN) * (Nx12)
+	arm_mat_mult_f32(Ki, Hi, &temp12x12_0);	// Ki(k)*Hi --> (12xN) * (Nx12)
 
-	arm_mat_sub_f32(&Identity12x12, &temp12x12, &temp12x12); // I - (Ki(k)*Hi)
+	arm_mat_sub_f32(&Identity12x12, &temp12x12_0, &temp12x12_0); // I - (Ki(k)*Hi)
 
-	arm_mat_mult_f32(&temp12x12, &P_minus, &P_curr);	// P(k) = (I - Ki(k)*Hi)*P-(k) --> (12x12) * (12x12)
+	arm_mat_trans_f32(&temp12x12_0, &temp12x12_1); 	// I - (Ki(k)*Hi)^T
+
+	arm_mat_mult_f32(&temp12x12_0, &P_minus, &temp12x12_2);	// (I - Ki(k)*Hi)*P-(k) --> (12x12) * (12x12)
+
+	arm_mat_mult_f32(&temp12x12_2, &temp12x12_1, &temp12x12_0);	// (I - Ki(k)*Hi)*P-(k)*(I - (Ki(k)*Hi)^T
+
+	arm_mat_mult_f32(Ki, Ri, &temp12xN_0);	// Ki(k)*Ri --> (12xN) * (NxN)
+
+	arm_mat_mult_f32(&temp12xN_0, &tempNx12_0, &temp12x12_1);	// Ki(k)*Ri*Ki(k)^T --> (12xN) * (Nx12)
+
+	arm_mat_add_f32(&temp12x12_0, &temp12x12_1, &P_curr);	// P(k) = (I - Ki(k)*Hi)*P-(k)*(I - (Ki(k)*Hi)^T + Ki(k)*Ri*Ki(k)^T
+
+	/*
+	 *  Cleanup Section
+	 */
+
+	free(temp12xN_0_f32);
+	free(tempNx12_0_f32);
 
 }
 
