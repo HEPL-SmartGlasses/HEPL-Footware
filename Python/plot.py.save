@@ -1,0 +1,23 @@
+from mpl_toolkits import mplot3d
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import h5py
+
+def plot():
+	fig = plt.figure()
+	ax = plt.axes(projection='3d')
+
+	df = pd.read_csv("processed.csv")
+	f = h5py.File("./PyShoe Dataset/pyshoe/data/vicon/raw/2018-02-22-10-10-56/processed_data.mat", 'r')
+	gt = f.get('data/gt')
+	gt = np.array(gt)
+
+	ax.plot3D(df.X, df.Y, df.Z, 'blue')
+	ax.plot3D(gt[0], gt[1], gt[2]processed_data.mat, 'red')
+	plt.xlabel('X')
+	plt.ylabel('Y')
+	plt.legend('HEPL', 'Truth')
+
+	plt.savefig('Processed.png')
