@@ -9,7 +9,7 @@ def plot():
 	fig = plt.figure(figsize=(20, 20))
 
 	hepl = pd.read_csv("processed.csv")
-	f = loadmat("./PyShoe Dataset/pyshoe/data/vicon/raw/2018-02-22-10-10-56/processed_data.mat")
+	f = loadmat("./PyShoe Dataset/pyshoe/data/vicon/processed/2018-02-22-10-10-56.mat")
 	gt = np.array(f['gt'])
 	gt_x = [(x[0]-gt[0][0]) for x in gt]
 	gt_y = [(x[1]-gt[0][1]) for x in gt]
@@ -20,7 +20,7 @@ def plot():
 	gt_z = gt_z[0:len(hepl.ts)]
 
 	imu = np.array(f['imu'])
-	imu_x = [(x[3]-imu[0][3]) for x in imu]
+	imu_x = [(x[0]) for x in imu]
 	imu_x = imu_x[0:len(hepl.ts)]
 
 # Calculate Error
@@ -44,12 +44,11 @@ def plot():
 	axX.plot(hepl.ts, hepl.optX * np.array(scale), 'blue')
 	axX.plot(hepl.ts, hepl.corrX * np.array(scale), 'red')
 	axX.plot(hepl.ts, hepl.predX * np.array(scale), 'green')
-	axX.plot(hepl.ts, hepl.predX * hepl.gainX * np.array(500), 'gray')
 	axX.plot(hepl.ts, imu_x * np.array(imuscale), 'yellow')
 	axX.set_xlabel('Time (s)')
 	axX.set_ylabel('X Position (m)')
 	#axX.legend(['Truth', 'HEPL Optimal', 'HEPL Measured', 'HEPL Correction'], fontsize=12)
-	axX.legend(['Truth', 'HEPL Optimal','HEPL Correction', 'HEPL Prediction','Gain * Prediction','IMU'], fontsize=12)
+	axX.legend(['Truth', 'HEPL Optimal','HEPL Correction', 'HEPL Prediction','IMU'], fontsize=12)
 
 # Y Plot
 	axY = fig.add_subplot(4, 2, 3)
@@ -99,6 +98,13 @@ def plot():
 	axQ.set_xlabel('Time (s)')
 	axQ.set_ylabel('Quat, X Y Z W')
 	axQ.legend(['X','Y','Z'], fontsize=12)
+
+# ZUPT Plot
+	axZUPT = fig.add_subplot(4, 2, 8)
+	axZUPT.plot(hepl.ts, (hepl.zuptPhase*np.array(-1))+np.array(1), 'red')
+	axZUPT.set_xlabel('Time (s)')
+	axZUPT.set_ylabel('ZUPT')
+	axZUPT.legend(['Phase-Sw:1,St:0'])
 
 # Save Image
 	fig.suptitle('HEPL Eval\n' + 'RMSE: ' + str(rmse) + '\nMAE: ' + str(mae))

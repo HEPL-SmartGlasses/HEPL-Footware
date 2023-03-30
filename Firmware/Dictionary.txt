@@ -22,3 +22,8 @@ accel
 val
 ambientization
 vals
+gyro
+reqs
+sigma
+exp
+cos

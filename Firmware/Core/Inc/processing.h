@@ -34,11 +34,14 @@ enum PHASE {SWING, STANCE};
 #define g (float)9.8029 			 	// Local acceleration due to gravity: Ann Arbor = 9.80274 //TODO
 #define deg2rad (float) 0.0174532925199 // pi / 180
 
+#define RING_SIZE 8
+
 // ZUPT
-#define ZUPT_W 10										// Angular Rate Energy Detector Window Size (# of samples)
+#define ZUPT_W 20										// Angular Rate Energy Detector Window Size (# of samples)
 #define G_VARIANCE_SQ (float)0.01*0.01					// sigma_w^2
 #define ZUPT_SCALE_FACTOR 1.0/(G_VARIANCE_SQ * ZUPT_W)	// 1/(sigma_w^2 * W)
-#define ZUPT_THRESHOLD (float)88000						// Y' //TODO determine this better
+#define ZUPT_THRESHOLD (float)17000						// Y' //TODO determine this better
+#define PHASE_INTERVAL_THRESHOLD 10					// Double threshold
 
 /*
  *  Define matrix variables
@@ -58,7 +61,7 @@ void calculateCorrectedState(
  */
 float returnCurrentPosition(Position* current_pos);
 
-float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat);
+float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat, Position* zupt);
 
 /*
  *  Determine Avg Angular Rate from IMU data
@@ -175,6 +178,21 @@ void cross_product(
 		arm_matrix_instance_f32* a,
 		arm_matrix_instance_f32* b,
 		arm_matrix_instance_f32* c);
+
+/*
+ *  Creates ring buffers for gyro x, y, z
+ */
+void initRingBuffers(void);
+
+/*
+ *  Updates buffer with new reading, outputs averaged reading
+ */
+void getNextGyroReading(SensorData* IMU0_data, SensorData* IMU1_data, float* gyroOut);
+
+/*
+ *  Updates buffer with new reading, outputs averaged reading
+ */
+void getNextXLReading(SensorData* IMU0_data, SensorData* IMU1_data, float* xl0Out, float* xl1Out);
 
 /*
  *  Creates a linked-list of size W initialized to stance phase for ZUPT

@@ -15,6 +15,20 @@ ZUPTNode* ZUPTHead; // Head to ZUPT linked list
 
 float w_avg_b0_mag; // Magnitude of average angular rate, board frame
 
+float w_avg_x_ring[RING_SIZE];
+float w_avg_y_ring[RING_SIZE];
+float w_avg_z_ring[RING_SIZE];
+
+float xl0_avg_x_ring[RING_SIZE];
+float xl0_avg_y_ring[RING_SIZE];
+float xl0_avg_z_ring[RING_SIZE];
+float xl1_avg_x_ring[RING_SIZE];
+float xl1_avg_y_ring[RING_SIZE];
+float xl1_avg_z_ring[RING_SIZE];
+
+uint8_t w_oldest = 0;
+uint8_t xl_oldest = 0;
+
 /*
  *  Matrix data
  */
@@ -30,6 +44,18 @@ float g_n_f32[3] = { // (3x1)
 		g,
 }; // Gravitation vector in frame n, unit (m/s^2)
 
+float xl_b0_f32[3] = { // (3x1)
+		0,
+		0,
+		0,
+}; // Average acceleration vector of b0 relative to nav in b0
+
+float xl_b1_f32[3] = { // (3x1)
+		0,
+		0,
+		0,
+}; // Average acceleration vector of b1 relative to nav in b0
+
 float w_avg_b0_f32[3] = { // (3x1)
 		0,
 		0,
@@ -37,10 +63,7 @@ float w_avg_b0_f32[3] = { // (3x1)
 }; // Average angular rate vector of b0 relative to nav in b0, unit (deg/s)
 
 float q_f32[4] = { // (4x1)
-		0.86102826874,
-		-0.0704183079286,
-		-0.119457839164,
-		-0.489286685214,
+		1.9612, -0.0049, -0.2758, 0,
 }; // Quaternion representing rotation of board frame from nav frame, init to Identity quaternion (1, 0, 0, 0)
 
 float rotation_b0_n_f32[9] = { // (3x3)
@@ -223,32 +246,38 @@ float K_stance_f32[144] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 }; // Kalman Gain K_2, stance phase, init to all zeros
 
-float R_swing_f32[36] = { // (6x6)
-		0.01,0,0,	0,0,0,
-		0,0.01,0,	0,0,0,
-		0,0,0.01,	0,0,0,
+#define dT 0.005
+#define dT2 dT*dT
+#define dT3 dT2*dT
+#define r_tun 2.4 * g / 1000 * dT
+#define r_tune 5
 
-		0,0,0,	0.01,0,0,
-		0,0,0,	0,0.01,0,
-		0,0,0,	0,0,0.01,
+float R_swing_f32[36] = { // (6x6)
+		r_tune,0,0,	0,0,0,
+		0,r_tune,0,	0,0,0,
+		0,0,r_tune,	0,0,0,
+
+		0,0,0,		r_tune,0,0,
+		0,0,0,		0,r_tune,0,
+		0,0,0,		0,0,r_tune,
 }; // Observation noise covariance, swing phase, init to // TODO fill this in
 
 float R_stance_f32[144] = { // (12x12)
-		0.01,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0.01,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0.01,	0,0,0,	0,0,0,	0,0,0,
+		r_tune,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,r_tune,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,r_tune,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0.01,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0.01,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0.01,	0,0,0,	0,0,0,
+		0,0,0,			r_tune,0,0,	0,0,0,	0,0,0,
+		0,0,0,			0,r_tune,0,	0,0,0,	0,0,0,
+		0,0,0,			0,0,r_tune,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0.01,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0.01,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0.01,	0,0,0,
+		0,0,0,	0,0,0,	r_tune,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,r_tune,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,r_tune,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0.01,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0.01,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0.01,
+		0,0,0,	0,0,0,	0,0,0,	r_tune,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,r_tune,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,r_tune,
 }; // Observation noise covariance, stance phase, init to // TODO fill this in
 
 float P_prev_f32[] = { // (12x12)
@@ -260,14 +289,14 @@ float P_prev_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	16,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,16,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,16,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-}; // A posteriori covariance, k-1, init to zeros
+		0,0,0,	0,0,0,	0,0,0,	16,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,16,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,16,
+}; // A posteriori covariance, k-1
 
 float P_curr_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -278,14 +307,14 @@ float P_curr_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	16,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,16,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,16,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-}; // A posteriori covariance, k, init to zeros
+		0,0,0,	0,0,0,	0,0,0,	16,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,16,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,16,
+}; // A posteriori covariance, k
 
 float P_minus_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -296,41 +325,39 @@ float P_minus_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	16,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,16,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,16,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-}; // A priori covariance, k, init to zeros
-
-#define Tx 0.0001
-#define Ty 0.0001
-#define Tz 0.0001
+		0,0,0,	0,0,0,	0,0,0,	16,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,16,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,16,
+}; // A priori covariance, k
 
 float Q_prev_f32[] = { // (12x12)
-		Tx,0,0,		Tx,0,0,		Tx,0,0,		Tx,0,0,
-		0,Ty,0,		0,Ty,0,		0,Ty,0,		0,Ty,0,
-		0,0,Tz,		0,0,Tz,		0,0,Tz,		0,0,Tz,
+		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
+		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
+		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
 
-		Tx,0,0,		Tx,0,0,		Tx,0,0,		Tx,0,0,
-		0,Ty,0,		0,Ty,0,		0,Ty,0,		0,Ty,0,
-		0,0,Tz,		0,0,Tz,		0,0,Tz,		0,0,Tz,
+		0,0,0,	4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,
+		0,0,0,	4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,
+		0,0,0,	4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,
 
-		Tx,Ty,0,	Tx,0,0,		Tx,0,0,		Tx,0,0,
-		0,Ty,0,		0,Ty,0,		0,Ty,0,		0,Ty,0,
-		0,0,Tz,		0,0,Tz,		0,0,Tz,		0,0,Tz,
+		6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,	0,0,0,
+		6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,	0,0,0,
+		6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,	0,0,0,
 
-		Tx,0,0,		Tx,0,0,		Tx,0,0,		Tx,0,0,
-		0,Ty,0,		0,Ty,0,		0,Ty,0,		0,Ty,0,
-		0,0,Tz,		0,0,Tz,		0,0,Tz,		0,0,Tz,
+		0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,
+		0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,
+		0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,
 }; // Process noise covariance, k-1, init to // TODO fill this in
 
 /*
  *  Debug arrays
  */
-float correction_f32[3] = {0,0,0,}; 	// x, y, z
+float phase_out = 0;
+float optimal_f32[3] = {0,0,0,};	// x, y, z
+float correction_f32[3] = {0,0,0,}; // x, y, z
 float prediction_f32[3] = {0,0,0,}; // x, y, z
 float gain_f32[3] = {0,0,0,}; // x, y, z
 
@@ -474,12 +501,18 @@ void init_processing(void) {
 
 	initZUPT(); // Initialize ZUPT phase detector
 
+	initRingBuffers();
+
+	arm_quaternion_normalize_f32(q_f32, q_f32, 1); // normalize initial quaternion
+
 }
 
 void calculateCorrectedState(
 		SensorData* IMU0_data,
 		SensorData* IMU1_data,
 		float timeDelta) { // TODO Verify this
+
+	enum PHASE phase;
 
 	calculateAvgAngularRate(IMU0_data, IMU1_data); // w_avg_b0
 
@@ -498,7 +531,7 @@ void calculateCorrectedState(
 
 	//printf("%f", w_avg_b0_mag);
 
-	enum PHASE phase = detectZUPTPhase();
+	phase = detectZUPTPhase();
 
 	arm_matrix_instance_f32 Hi; // (Nx12)
 	arm_matrix_instance_f32 Zi; // (Nx1)
@@ -506,14 +539,14 @@ void calculateCorrectedState(
 	arm_matrix_instance_f32 Ki; // (12xN)
 
 	if (phase == SWING) {
-		printf("Swing\n");
+//		printf("Swing\n");
 		// N = 6
 		Hi = H_swing;
 		Zi = Z_swing;
 		Ri = R_swing;
 		Ki = K_swing;
 	} else { // phase == STANCE
-		printf("Stance\n");
+//		printf("Stance\n");
 		// N = 12
 		Hi = H_stance;
 		Zi = Z_stance;
@@ -528,9 +561,26 @@ void calculateCorrectedState(
 
 	calculateOptimalStateEstimation(&Ki, &Zi, &Hi);	// x(k) <-- x_best(k) = x(k) + Ki(k)*(Zi(k) - Hi*x(k))
 
+	if (phase == STANCE) {
+		x_curr_f32[2] = 0;
+		x_curr_f32[5] = 0;
+	}
+	float v_gate = 0.3;
+	if (fabs(x_curr_f32[8]) > v_gate) {
+		x_curr_f32[8] = v_gate * (x_curr_f32[8] > 0 ? 1 : -1);
+	}
+	if (fabs(x_curr_f32[11]) > v_gate) {
+		x_curr_f32[11] = v_gate * (x_curr_f32[11] > 0 ? 1 : -1);
+	}
+
+	optimal_f32[0] = (x_curr_f32[0] + x_curr_f32[3]) / 2;
+	optimal_f32[1] = (x_curr_f32[1] + x_curr_f32[4]) / 2;
+	optimal_f32[2] = (x_curr_f32[2] + x_curr_f32[5]) / 2;
+
 	calculateOptimalEstimationErrorCovariance(&Ki, &Hi);	// P(k) = (I - Ki(k)*Hi)*P-(k)
 
 	updatePreviousMatrices();	// update x_prev, P_prev, (Q_prev?) // TODO Add Q_prev to this?
+	phase_out = (float)phase;
 }
 
 float returnCurrentPosition(Position* current_pos) {
@@ -542,18 +592,19 @@ float returnCurrentPosition(Position* current_pos) {
 	return 0.;
 }
 
-float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat) {
+float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat, Position* ZUPT) {
 	corr->X = correction_f32[0];
 	corr->Y = correction_f32[1];
 	corr->Z = correction_f32[2];
 
-	pred->X = prediction_f32[0];
-	pred->Y = prediction_f32[1];
-	pred->Z = prediction_f32[2];
+	*pred = (Position){0,0,0};
+//	pred->X = prediction_f32[0];
+//	pred->Y = prediction_f32[1];
+//	pred->Z = prediction_f32[2];
 
-	optimal_pos->X = (x_curr_f32[0] + x_curr_f32[3]) / 2;
-	optimal_pos->Y = (x_curr_f32[1] + x_curr_f32[4]) / 2;
-	optimal_pos->Z = (x_curr_f32[2] + x_curr_f32[5]) / 2;
+	optimal_pos->X = optimal_f32[0];
+	optimal_pos->Y = optimal_f32[1];
+	optimal_pos->Z = optimal_f32[2];
 
 	K_gain->X = gain_f32[0];
 	K_gain->Y = gain_f32[1];
@@ -568,6 +619,8 @@ float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, P
 	quat->Y = q_f32[2];
 	quat->Z = q_f32[3];
 
+	ZUPT->X = phase_out; // Phase mapped to X
+
 	return w_avg_b0_mag;
 }
 
@@ -575,9 +628,7 @@ void calculateAvgAngularRate(
 		SensorData* IMU0_data,
 		SensorData* IMU1_data) { // TODO Verify this
 
-	w_avg_b0_f32[0] = (IMU0_data->G_X + IMU1_data->G_X) / 2;
-	w_avg_b0_f32[1] = (IMU0_data->G_Y + IMU1_data->G_Y) / 2;
-	w_avg_b0_f32[2] = (IMU0_data->G_Z + IMU1_data->G_Z) / 2;
+	getNextGyroReading(IMU0_data, IMU1_data, w_avg_b0_f32);
 
 	// Determine |w_avg_b0|
 	w_avg_b0_mag = (w_avg_b0_f32[0]*w_avg_b0_f32[0]) + (w_avg_b0_f32[1]*w_avg_b0_f32[1]) + (w_avg_b0_f32[2]*w_avg_b0_f32[2]);
@@ -600,19 +651,14 @@ void calculateRotationMatrix(
 	delta_q_f32[2] = w_avg_b0_f32[1] * q1_3_scaling_term;
 	delta_q_f32[3] = w_avg_b0_f32[2] * q1_3_scaling_term;
 
-//	if (delta_q_f32[1]) {
-//		printf("W:%f X:%f Y:%f Z:%f\n",delta_q_f32[0], delta_q_f32[1], delta_q_f32[2], delta_q_f32[3]);
-//	}
+	arm_quaternion_normalize_f32(delta_q_f32, delta_q_f32, 1);	// q = q / |q|
 
 	// Calculate new normalized quaternion
-	arm_quaternion_product_single_f32(q_f32, delta_q_f32, q_f32); // q = q x delta_q
-//	printf("W:%f X:%f Y:%f Z:%f\n",q_f32[0], q_f32[1], q_f32[2], q_f32[3]);
+	arm_quaternion_product_single_f32(delta_q_f32, q_f32, q_f32); // q = q x delta_q
 	arm_quaternion_normalize_f32(q_f32, q_f32, 1);	// q = q / |q|
-//	printf("W:%f X:%f Y:%f Z:%f\n",q_f32[0], q_f32[1], q_f32[2], q_f32[3]);
-
 	// Calculate rotation matrix from board frame to nav frame using quaternion
 	arm_quaternion2rotation_f32(q_f32, rotation_b0_n_f32, 1);
-	printf("~~~~~~~~~~~~\n");
+	//printf("%f %f %f %f %f %f %f %f %f\n", rotation_b0_n_f32[0], rotation_b0_n_f32[1], rotation_b0_n_f32[2], rotation_b0_n_f32[3], rotation_b0_n_f32[4], rotation_b0_n_f32[5], rotation_b0_n_f32[6], rotation_b0_n_f32[7], rotation_b0_n_f32[8]);
 }
 
 void calculateStateEstimation(void) { // TODO Verify this
@@ -650,20 +696,23 @@ void calculateStateEstimationErrorCovariance(void) {
 	 *  Define Temporary Objects
 	 */
 
-	float temp12x12_f32[144];
-	arm_matrix_instance_f32 temp12x12;
-	arm_mat_init_f32(&temp12x12, 12, 12, temp12x12_f32); // Temp 12x12 matrix
-	arm_mat_trans_f32(&F_matrix, &temp12x12);	// Initialize to transpose of F
+	float temp12x12_0_f32[144];
+	arm_matrix_instance_f32 temp12x12_0;
+	arm_mat_init_f32(&temp12x12_0, 12, 12, temp12x12_0_f32); // Temp 12x12 matrix
+	arm_mat_trans_f32(&F_matrix, &temp12x12_0);	// Initialize to transpose of F
 
+	float temp12x12_1_f32[144];
+	arm_matrix_instance_f32 temp12x12_1;
+	arm_mat_init_f32(&temp12x12_1, 12, 12, temp12x12_1_f32); // Temp 12x12 matrix
 	/*
 	 *  Calculation Section
 	 */
 
-	arm_mat_mult_f32(&P_prev, &temp12x12, &temp12x12);	// P(k-1)*F^T --> (12x12) * (12x12)
+	arm_mat_mult_f32(&P_prev, &temp12x12_0, &temp12x12_1);	// P(k-1)*F^T --> (12x12) * (12x12)
 
-	arm_mat_mult_f32(&F_matrix, &temp12x12, &temp12x12);	// F*(P(k-1)*F^T) --> (12x12) * (12x12)
+	arm_mat_mult_f32(&F_matrix, &temp12x12_1, &temp12x12_0);	// F*(P(k-1)*F^T) --> (12x12) * (12x12)
 
-	arm_mat_add_f32(&temp12x12, &Q_prev, &P_minus);	// P-(k) = (F*P(k-1)*F^T) + Q(k-1)
+	arm_mat_add_f32(&temp12x12_0, &Q_prev, &P_minus);	// P-(k) = (F*P(k-1)*F^T) + Q(k-1)
 
 }
 
@@ -678,41 +727,55 @@ void calculateGainMatrix(
 	 *  Define Temporary Objects
 	 */
 
-	float* temp12xN_f32 = (float*)malloc(12 * N * sizeof(float));
-	arm_matrix_instance_f32 temp12xN;
-	arm_mat_init_f32(&temp12xN, 12, N, temp12xN_f32); // temp matrix (12xN)
-	arm_mat_trans_f32(Hi, &temp12xN); // init to transpose of Hi
+	float* temp12xN_0_f32 = (float*)malloc(12 * N * sizeof(float));
+	arm_matrix_instance_f32 temp12xN_0;
+	arm_mat_init_f32(&temp12xN_0, 12, N, temp12xN_0_f32); // temp matrix (12xN)
+	arm_mat_trans_f32(Hi, &temp12xN_0); // init to transpose of Hi
 
-	float* tempNxN_f32 = (float*)malloc(N * N * sizeof(float));
-	arm_matrix_instance_f32 tempNxN;
-	arm_mat_init_f32(&tempNxN, N, N, tempNxN_f32); // temp matrix (NxN)
+	float* temp12xN_1_f32 = (float*)malloc(12 * N * sizeof(float));
+	arm_matrix_instance_f32 temp12xN_1;
+	arm_mat_init_f32(&temp12xN_1, 12, N, temp12xN_1_f32); // temp matrix (12xN)
+
+	float* tempNxN_0_f32 = (float*)malloc(N * N * sizeof(float));
+	arm_matrix_instance_f32 tempNxN_0;
+	arm_mat_init_f32(&tempNxN_0, N, N, tempNxN_0_f32); // temp matrix (NxN)
+
+	float* tempNxN_1_f32 = (float*)malloc(N * N * sizeof(float));
+	arm_matrix_instance_f32 tempNxN_1;
+	arm_mat_init_f32(&tempNxN_1, N, N, tempNxN_1_f32); // temp matrix (NxN)
 
 	/*
 	 *  Calculation Section
 	 */
 
-	arm_mat_mult_f32(&P_minus, &temp12xN, &temp12xN);	// P-(k)*Hi^T --> (12x12) * (12xN)
+	arm_mat_mult_f32(&P_minus, &temp12xN_0, &temp12xN_1);	// P-(k)*Hi^T --> (12x12) * (12xN)
 
-	arm_mat_mult_f32(Hi, &temp12xN, &tempNxN);	// Hi*(P-(k)*Hi^T) --> (Nx12) * (12xN)
+	arm_mat_mult_f32(Hi, &temp12xN_1, &tempNxN_0);	// Hi*(P-(k)*Hi^T) --> (Nx12) * (12xN)
 
-	arm_mat_add_f32(&tempNxN, Ri, &tempNxN);	// (Hi*P-(k)*Hi^T + Ri(k))
+	arm_mat_add_f32(&tempNxN_0, Ri, &tempNxN_1);	// (Hi*P-(k)*Hi^T + Ri(k))
 
-	arm_mat_inverse_f32(&tempNxN, &tempNxN);	// (Hi*P-(k)*Hi^T + Ri(k))^-1
+	arm_mat_inverse_f32(&tempNxN_1, &tempNxN_0);	// (Hi*P-(k)*Hi^T + Ri(k))^-1
 
-	arm_mat_mult_f32(&temp12xN, &tempNxN, Ki);	// Ki(k) = P-(k)*Hi^T * (Hi*P-(k)*Hi^T + Ri(k))^-1 --> (12xN) * (NxN)
+	arm_mat_mult_f32(&temp12xN_1, &tempNxN_0, Ki);	// Ki(k) = P-(k)*Hi^T * (Hi*P-(k)*Hi^T + Ri(k))^-1 --> (12xN) * (NxN)
 
 	/*
 	 *  Cleanup Section
 	 */
 
 	// Free malloc'd memory
-	free(temp12xN_f32);
-	free(tempNxN_f32);
+	free(temp12xN_0_f32);
+	free(tempNxN_0_f32);
+	free(temp12xN_1_f32);
+	free(tempNxN_1_f32);
 
 	gain_f32[0] = (Ki->pData[0] + Ki->pData[3]) / 2;
 	gain_f32[1] = (Ki->pData[1] + Ki->pData[4]) / 2;
 	gain_f32[2] = (Ki->pData[2] + Ki->pData[5]) / 2;
 }
+
+#define X_THRES 0.1
+#define Y_THRES 0.1
+#define Z_THRES 0.1
 
 void calculateOptimalStateEstimation(
 		arm_matrix_instance_f32* Ki, /*(12xN)*/
@@ -725,10 +788,13 @@ void calculateOptimalStateEstimation(
 	 *  Define Temporary Objects
 	 */
 
-	float* tempNx1_f32 = (float*)malloc(N * sizeof(float));
-//	float tempNx1_f32[] = {0,0,0,0,0,0};
-	arm_matrix_instance_f32 tempNx1;
-	arm_mat_init_f32(&tempNx1, N, 1, tempNx1_f32); // Will temporarily store some operation results, (Nx1)
+	float* tempNx1_0_f32 = (float*)malloc(N * sizeof(float));
+	arm_matrix_instance_f32 tempNx1_0;
+	arm_mat_init_f32(&tempNx1_0, N, 1, tempNx1_0_f32); // Will temporarily store some operation results, (Nx1)
+
+	float* tempNx1_1_f32 = (float*)malloc(N * sizeof(float));
+	arm_matrix_instance_f32 tempNx1_1;
+	arm_mat_init_f32(&tempNx1_1, N, 1, tempNx1_1_f32); // Will temporarily store some operation results, (Nx1)
 
 	float temp12x1_f32[12];
 	arm_matrix_instance_f32 temp12x1;
@@ -738,28 +804,35 @@ void calculateOptimalStateEstimation(
 	 *  Calculation Section
 	 */
 
-	arm_mat_mult_f32(Hi, &x_curr, &tempNx1);	// Hi*x(k) --> (Nx12) * (12x1)
+	arm_mat_mult_f32(Hi, &x_curr, &tempNx1_0);	// Hi*x(k) --> (Nx12) * (12x1)
 
 	// Calculate correction factor
-	arm_mat_sub_f32(Zi, &tempNx1, &tempNx1);	// (Zi(k) - Hi*x(k)) -> tempNx1
+	arm_mat_sub_f32(Zi, &tempNx1_0, &tempNx1_1);	// (Zi(k) - Hi*x(k)) -> tempNx1
 //	printf("%f %f %f\n", tempNx1_f32[3], tempNx1_f32[4], tempNx1_f32[5]); // should be ideally zero
 
 	// Weight correction factor by Kalman Gain
-	arm_mat_mult_f32(Ki, &tempNx1, &temp12x1); // Ki(k) * (Zi(k) - Hi*x(k)) --> (12xN) * (Nx1) -> temp12x1
+	arm_mat_mult_f32(Ki, &tempNx1_1, &temp12x1); // Ki(k) * (Zi(k) - Hi*x(k)) --> (12xN) * (Nx1) -> temp12x1
 
-	correction_f32[0] += (temp12x1_f32[0] + temp12x1_f32[3]) / 2;
-	correction_f32[1] += (temp12x1_f32[1] + temp12x1_f32[4]) / 2;
-	correction_f32[2] += (temp12x1_f32[2] + temp12x1_f32[5]) / 2;
+	correction_f32[0] = (temp12x1_f32[0] + temp12x1_f32[3]) / 2;
+	correction_f32[1] = (temp12x1_f32[1] + temp12x1_f32[4]) / 2;
+	correction_f32[2] = (temp12x1_f32[2] + temp12x1_f32[5]) / 2;
+
+//	printf("X_curr_before: %f \n", (x_curr_f32[0] + x_curr_f32[3]) / 2);
+//	printf("Correction: %f \n", (temp12x1_f32[0] + temp12x1_f32[3]) / 2);
 
 	// Add weighted correction factor
 	arm_mat_add_f32(&x_curr, &temp12x1, &x_curr); // x(k) <= x_best(k) = x(k) + Ki(k) * (Zi(k) - Hi*x(k))
+
+//	printf("X_curr_after: %f \n", (x_curr_f32[0] + x_curr_f32[3]) / 2);
+//	printf("~~~~~~~~~\n");
 
 	/*
 	 *  Cleanup Section
 	 */
 
 	// Free malloc'd memory
-	free(tempNx1_f32);
+	free(tempNx1_0_f32);
+	free(tempNx1_1_f32);
 }
 
 void calculateOptimalEstimationErrorCovariance(
@@ -846,35 +919,55 @@ void updateUVector(
 	arm_matrix_instance_f32 temp1;
 	arm_mat_init_f32(&temp1, 3, 1, temp1_f32); // temp for IMU1 vector
 
+	float temp2_f32[3] = {0,0,0};
+	arm_matrix_instance_f32 temp2;
+	arm_mat_init_f32(&temp2, 3, 1, temp2_f32); // temp for rotated IMU0 vector
+
+	float temp3_f32[3] = {0,0,0};
+	arm_matrix_instance_f32 temp3;
+	arm_mat_init_f32(&temp3, 3, 1, temp3_f32); // temp for rotated IMU1 vector
+
 	/*
 	 *  Calculation Section
 	 */
+	//printf("%f %f %f %f %f %f %f %f %f\n", rotation_b0_n_f32[0], rotation_b0_n_f32[1], rotation_b0_n_f32[2], rotation_b0_n_f32[3], rotation_b0_n_f32[4], rotation_b0_n_f32[5], rotation_b0_n_f32[6], rotation_b0_n_f32[7], rotation_b0_n_f32[8]);
+
+
+	//printf("%f %f %f \n", temp0_f32[0], temp0_f32[1], temp0_f32[2]);
 
 	// Rotate IMU0 XL from board frame to nav frame
-	arm_mat_mult_f32(&rotation_b0_n, &temp0, &temp0);	// R_b0_n*a0_b0 --> (3x3) * (3x1)
+	arm_mat_mult_f32(&rotation_b0_n, &temp0, &temp2);	// R_b0_n*a0_b0 --> (3x3) * (3x1)
+
+	//printf("%f %f %f \n", temp2_f32[0], temp2_f32[1], temp2_f32[2]);
 
 	// Rotate IMU1 XL from board frame to nav frame
-	arm_mat_mult_f32(&rotation_b0_n, &temp1, &temp1);	// R_b0_n*a1_b0 --> (3x3) * (3x1)
+	arm_mat_mult_f32(&rotation_b0_n, &temp1, &temp3);	// R_b0_n*a1_b0 --> (3x3) * (3x1)
 
 	// Subtract gravitation vector from IMU0 XL vector
-	arm_mat_sub_f32(&temp0, &g_n, &temp0);
+	arm_mat_sub_f32(&temp2, &g_n, &temp0);
+	//printf("%f %f %f \n", temp0_f32[0], temp0_f32[1], temp0_f32[2]);
+	//printf("~~~~~~~~~~~~");
 
 	// Subtract gravitation vector from IMU1 XL vector
-	arm_mat_sub_f32(&temp1, &g_n, &temp1);
+	arm_mat_sub_f32(&temp3, &g_n, &temp1);
+
 
 	/*
 	 *  Update Section
 	 */
 
 	// Fill u input vector with IMU0 data
-	u_curr_f32[0] = temp0_f32[0];
-	u_curr_f32[1] = temp0_f32[1];
-	u_curr_f32[2] = temp0_f32[2];
+
+	getNextXLReading(IMU0_data, IMU1_data, xl_b0_f32, xl_b1_f32);
+
+	u_curr_f32[0] = xl_b0_f32[0];
+	u_curr_f32[1] = xl_b0_f32[1];
+	u_curr_f32[2] = xl_b0_f32[2];
 
 	// Fill u input vector with IMU1 data
-	u_curr_f32[3] = temp1_f32[0];
-	u_curr_f32[4] = temp1_f32[1];
-	u_curr_f32[5] = temp1_f32[2];
+	u_curr_f32[3] = xl_b1_f32[0];
+	u_curr_f32[4] = xl_b1_f32[1];
+	u_curr_f32[5] = xl_b1_f32[2];
 }
 
 void updateZiVector(
@@ -949,6 +1042,79 @@ void cross_product(
 	c->pData[2] = aData[0] * bData[1] - aData[1] * bData[0];
 }
 
+void initRingBuffers(void) {
+	int i;
+	for(i = 0; i < RING_SIZE; ++i) {
+		w_avg_x_ring[i] = 0;
+		w_avg_y_ring[i] = 0;
+		w_avg_z_ring[i] = 0;
+		xl0_avg_x_ring[i] = 0;
+		xl0_avg_y_ring[i] = 0;
+		xl0_avg_z_ring[i] = 0;
+		xl1_avg_x_ring[i] = 0;
+		xl1_avg_y_ring[i] = 0;
+		xl1_avg_z_ring[i] = 0;
+	}
+}
+
+void getNextGyroReading(SensorData* IMU0_data, SensorData* IMU1_data, float* gyroOut) {
+	w_avg_x_ring[w_oldest] = (IMU0_data->G_X + IMU1_data->G_X) / 2;
+	w_avg_y_ring[w_oldest] = (IMU0_data->G_Y + IMU1_data->G_Y) / 2;
+	w_avg_z_ring[w_oldest] = (IMU0_data->G_Z + IMU1_data->G_Z) / 2;
+
+	w_oldest = (w_oldest + 1) % RING_SIZE;
+
+	gyroOut[0] = 0;
+	gyroOut[1] = 0;
+	gyroOut[2] = 0;
+
+	int i;
+	for(i = 0; i < RING_SIZE; ++i) {
+		gyroOut[0] += w_avg_x_ring[i];
+		gyroOut[1] += w_avg_y_ring[i];
+		gyroOut[2] += w_avg_z_ring[i];
+	}
+
+	gyroOut[0] /= RING_SIZE;
+	gyroOut[1] /= RING_SIZE;
+	gyroOut[2] /= RING_SIZE;
+}
+
+void getNextXLReading(SensorData* IMU0_data, SensorData* IMU1_data, float* xl0Out, float* xl1Out) {
+	xl0_avg_x_ring[xl_oldest] = IMU0_data->XL_X;
+	xl0_avg_y_ring[xl_oldest] = IMU0_data->XL_Y;
+	xl0_avg_z_ring[xl_oldest] = IMU0_data->XL_Z;
+	xl1_avg_x_ring[xl_oldest] = IMU1_data->XL_X;
+	xl1_avg_y_ring[xl_oldest] = IMU1_data->XL_Y;
+	xl1_avg_z_ring[xl_oldest] = IMU1_data->XL_Z;
+
+	xl_oldest = (xl_oldest + 1) % RING_SIZE;
+
+	xl0Out[0] = 0;
+	xl0Out[1] = 0;
+	xl0Out[2] = 0;
+	xl1Out[0] = 0;
+	xl1Out[1] = 0;
+	xl1Out[2] = 0;
+
+	int i;
+	for(i = 0; i < RING_SIZE; ++i) {
+		xl0Out[0] += xl0_avg_x_ring[i];
+		xl0Out[1] += xl0_avg_y_ring[i];
+		xl0Out[2] += xl0_avg_z_ring[i];
+		xl1Out[0] += xl1_avg_x_ring[i];
+		xl1Out[1] += xl1_avg_y_ring[i];
+		xl1Out[2] += xl1_avg_z_ring[i];
+	}
+
+	xl0Out[0] /= RING_SIZE;
+	xl0Out[1] /= RING_SIZE;
+	xl0Out[2] /= RING_SIZE;
+	xl1Out[0] /= RING_SIZE;
+	xl1Out[1] /= RING_SIZE;
+	xl1Out[2] /= RING_SIZE;
+}
+
 void initZUPT(void) {
 	ZUPTHead = (ZUPTNode*)createZUPTNode(0.0);
 	ZUPTNode* tempNode = ZUPTHead;
@@ -965,9 +1131,13 @@ enum PHASE detectZUPTPhase(void) {
 	 *  1) Move head to next, free head
 	 *  2) Sum over W-1 nodes
 	 *  3) Append new node to end of list and add to sum
-	 *  4) Scale by 1/(sigma^2 * W) --> T
-	 *  5) Compare T to threshold, return stance if less than
+	 *  4) Scale by 1/(sigma^2 * W) --> Tw
+	 *  5) Compare Tw to threshold, return stance if less than AND interval reqs are met
 	 */
+
+	// Saturating interval counter
+	static enum PHASE curr_phase = STANCE;
+	static uint8_t phase_counter = 0; // 0 --> stance side, PHASE_INTERVAL_THRESHOLD --> swing side
 
 	// 1) Move head to next, free head
 	assert(ZUPTHead != NULL);
@@ -992,13 +1162,32 @@ enum PHASE detectZUPTPhase(void) {
 	tempNode = (ZUPTNode*)tempNode->next;
 	sum += tempNode->w_mag_sq;
 
-	// 4) Scale by 1/(sigma^2 * W) --> T
-	float T = sum * ZUPT_SCALE_FACTOR;
+	// 4) Scale by 1/(sigma^2 * W) --> Tw
+	float Tw = sum * ZUPT_SCALE_FACTOR;
 
-	printf("%f ", T);
+	//printf("%f ", Tw);
 
-	// 5) Compare T to threshold, return stance if less than
-	return (T < ZUPT_THRESHOLD) ? STANCE : SWING;
+	// 5) Compare Tw to threshold, return stance if less than AND interval reqs are met
+
+	// Check detected phase against saturating counter
+	enum PHASE detected_phase = (Tw < ZUPT_THRESHOLD) ? STANCE : SWING;
+	if (detected_phase != curr_phase) {
+		if (detected_phase == SWING) {
+			// Move counter in swing direction
+			++phase_counter;
+
+			// If counter saturated, switch phase to swing
+			curr_phase = (phase_counter == PHASE_INTERVAL_THRESHOLD) ? SWING : STANCE;
+		} else { // STANCE
+			// Move counter in stance direction
+			--phase_counter;
+
+			// If counter saturated, switch phase to stance
+			curr_phase = (phase_counter == 0) ? STANCE : SWING;
+		}
+	}
+
+	return curr_phase;
 }
 
 struct ZUPTNode* createZUPTNode(float w_mag) {
