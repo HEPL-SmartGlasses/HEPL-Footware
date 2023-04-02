@@ -9,6 +9,21 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/TransformFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/SupportFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/StatisticsFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/SVMFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/QuaternionMathFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/MatrixFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/InterpolationFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/FilteringFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/FastMathFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/DistanceFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/ControllerFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/ComplexMathFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/CommonTables/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/BayesFunctions/subdir.mk
+-include Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/BasicMathFunctions/subdir.mk
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
@@ -61,7 +76,7 @@ main-build: HEPL-Footware.elf secondary-outputs
 
 # Tool invocations
 HEPL-Footware.elf HEPL-Footware.map: $(OBJS) $(USER_OBJS) C:\Users\evanm\Documents\Michigan\eecs373\Project\HEPL-Footware\Firmware\STM32L443CCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "HEPL-Footware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\evanm\Documents\Michigan\eecs373\Project\HEPL-Footware\Firmware\STM32L443CCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HEPL-Footware.map" -Wl,--gc-sections -static -L../Drivers/CMSIS/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "HEPL-Footware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\evanm\Documents\Michigan\eecs373\Project\HEPL-Footware\Firmware\STM32L443CCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HEPL-Footware.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

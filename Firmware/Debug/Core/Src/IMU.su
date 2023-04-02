@@ -1,9 +1,9 @@
+../Core/Src/IMU.c:50:7:IMU_convertAccel	0	static
+../Core/Src/IMU.c:57:7:IMU_convertGyro	0	static
+../Core/Src/IMU.c:113:6:IMU_chipSelect	8	static
+../Core/Src/IMU.c:117:6:IMU_chipRelease	8	static
+../Core/Src/IMU.c:78:19:IMU_readRegister	24	static,ignoring_inline_asm
+../Core/Src/IMU.c:64:6:IMU_readSensorData	24	static
+../Core/Src/IMU.c:97:19:IMU_writeRegister	16	static,ignoring_inline_asm
 ../Core/Src/IMU.c:10:6:IMU_init	32	static
-../Core/Src/IMU.c:43:7:IMU_convertAccel	24	static
-../Core/Src/IMU.c:50:7:IMU_convertGyro	24	static
-../Core/Src/IMU.c:57:6:IMU_readSensorData	32	static
-../Core/Src/IMU.c:71:19:IMU_readRegister	40	static,ignoring_inline_asm
-../Core/Src/IMU.c:91:19:IMU_writeRegister	32	static,ignoring_inline_asm
-../Core/Src/IMU.c:107:6:IMU_chipSelect	8	static
-../Core/Src/IMU.c:111:6:IMU_chipRelease	8	static
-../Core/Src/IMU.c:115:6:IMU_updateOffsetCorrections	32	static
+../Core/Src/IMU.c:121:6:IMU_updateOffsetCorrections	24	static

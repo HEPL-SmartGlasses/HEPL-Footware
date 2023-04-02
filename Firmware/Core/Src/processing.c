@@ -1160,7 +1160,7 @@ void initZUPT(void) {
 
 	int i;
 	for(i = 0; i < ZUPT_W-1; ++i) {
-		tempNode->next = (struct ZUPTNode*)createZUPTNode(0.0);
+		tempNode->next = (ZUPTNode*)createZUPTNode(0.0);
 		tempNode = (ZUPTNode*)tempNode->next;
 	}
 }
@@ -1196,7 +1196,7 @@ enum PHASE detectZUPTPhase(void) {
 	sum += tempNode->w_mag_sq; // last node
 
 	// 3) Append new node to end of list and add to sum
-	tempNode->next = (struct ZUPTNode*)createZUPTNode(w_avg_b0_mag);
+	tempNode->next = (ZUPTNode*)createZUPTNode(w_avg_b0_mag);
 	assert(tempNode->next != NULL);
 	tempNode = (ZUPTNode*)tempNode->next;
 	sum += tempNode->w_mag_sq;
@@ -1229,9 +1229,11 @@ enum PHASE detectZUPTPhase(void) {
 	return curr_phase;
 }
 
-struct ZUPTNode* createZUPTNode(float w_mag) {
+ZUPTNode* createZUPTNode(float w_mag) {
 	ZUPTNode* node = (ZUPTNode*)malloc(sizeof(ZUPTNode));
 
 	node->next = NULL;
 	node->w_mag_sq = w_mag * w_mag;
+
+	return node;
 }

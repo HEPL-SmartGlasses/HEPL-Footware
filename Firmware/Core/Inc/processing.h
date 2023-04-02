@@ -209,6 +209,6 @@ enum PHASE detectZUPTPhase(void);
 /*
  *  Allocates memory for the ZUPT detector linked-list
  */
-struct ZUPTNode* createZUPTNode(float w_mag);
+ZUPTNode* createZUPTNode(float w_mag);
 
 #endif /* INC_PROCESSING_H_ */

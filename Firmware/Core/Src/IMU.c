@@ -15,6 +15,13 @@ void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU) {
 
 	uint8_t buf[BUFFER_SIZE]; // Generic buffer for tx/rx
 
+	// Set to 4-wire
+	buf[0] = CTRL3_C;
+	buf[1] = 0x04;
+	IMU_writeRegister(IMU, buf, 1);
+
+	IMU_readRegister(IMU, CTRL3_C, buf, 1);
+
 	// Verify SPI connection to IMU
 	IMU_readRegister(IMU, WHO_AM_I, buf, 1);
 	assert(buf[0] == WHO_I_AM_ID); // Crash if not connected properly
@@ -69,8 +76,7 @@ void IMU_readSensorData(IMU* IMU, SensorData* data) {
 }
 
 HAL_StatusTypeDef IMU_readRegister(IMU* IMU, uint8_t reg_addr, uint8_t* rx_buf, int num_bytes) {
-	uint8_t reg_buffer[1] = {reg_addr};
-	uint8_t rx[BUFFER_SIZE];
+	uint8_t reg_buffer[1] = {reg_addr | 0x80};
 
 	HAL_StatusTypeDef status;
 
@@ -79,7 +85,7 @@ HAL_StatusTypeDef IMU_readRegister(IMU* IMU, uint8_t reg_addr, uint8_t* rx_buf, 
 	IMU_chipSelect();
 
 	HAL_SPI_Transmit(IMU->hspi, (uint8_t *)reg_buffer, 1, SPI_TIMEOUT);
-	status = HAL_SPI_Receive(IMU->hspi, (uint8_t *)rx, num_bytes, SPI_TIMEOUT);
+	status = HAL_SPI_Receive(IMU->hspi, (uint8_t *)rx_buf, num_bytes, SPI_TIMEOUT);
 
 	IMU_chipRelease();
 
@@ -105,11 +111,11 @@ HAL_StatusTypeDef IMU_writeRegister(IMU* IMU, uint8_t* tx_buf, int num_bytes) {
 }
 
 void IMU_chipSelect(void) {
-	assert(0); // TODO write this
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,0); //TODO
 }
 
 void IMU_chipRelease(void) {
-	assert(0); // TODO write this
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,1); //TODO
 }
 
 void IMU_updateOffsetCorrections(IMU* IMU) {
