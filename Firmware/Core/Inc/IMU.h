@@ -113,11 +113,12 @@
 // END Register Address Map
 
 // Constants
+#define g (float)9.80274
 #define WHO_I_AM_ID 				0x6A
 #define FULLSCALE_ACCEL				8		// Linear Acceleration Full-Scale (+/- 8g)
-#define XL_SCALE_FACTOR				(float)0.000244140625	// Full-Scale Acceleration / Max LSB value (32768)
+#define XL_SCALE_FACTOR				(float)g*FULLSCALE_ACCEL/32768	// Full-Scale Acceleration / Max LSB value (32768)
 #define FULLSCALE_GYRO				1000	// Angular Rate Full-Scale (1000 deg/s)
-#define GYRO_SCALE_FACTOR			(float)0.030517578125	// Full-Scale Angular Rate / Max LSB value (32768)
+#define GYRO_SCALE_FACTOR			(float)FULLSCALE_GYRO/32768	// Full-Scale Angular Rate / Max LSB value (32768)
 #define SPI_TIMEOUT					0x01
 #define BUFFER_SIZE					12
 
@@ -129,7 +130,7 @@ typedef struct {
 	int8_t Y_offset;
 	int8_t Z_offset;
 
-	// Chip Select Function Ptr
+	uint8_t chipID; // Integer representing IMU0,1
 
 } IMU;
 
@@ -153,7 +154,7 @@ typedef struct {
  *	https://www.st.com/content/ccc/resource/technical/document/datasheet/76/27/cf/88/c5/03/42/6b/DM00218116.pdf/files/DM00218116.pdf/jcr:content/translations/en.DM00218116.pdf
  *
  */
-void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU);
+void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU, uint8_t chipID);
 
 /*
  *  @brief Read Gryo and Accel data from IMU
@@ -201,16 +202,13 @@ HAL_StatusTypeDef IMU_writeRegister(IMU* IMU, uint8_t* tx_buf, int num_bytes);
 /*
  *  @brief Enable IMU CS pin
  */
-void IMU_chipSelect(void);
+void IMU_chipSelect(uint8_t chipID);
 
 /*
  *  @brief Disable IMU CS pin
  */
-void IMU_chipRelease(void);
+void IMU_chipRelease(uint8_t chipID);
 
-/*
- *  @brief Update IMU offset values
- */
-void IMU_updateOffsetCorrections(IMU* IMU);
+void IMU_zero(IMU* imu0, IMU* imu1, IMU* imu2);
 
 #endif /* INC_IMU_H_ */

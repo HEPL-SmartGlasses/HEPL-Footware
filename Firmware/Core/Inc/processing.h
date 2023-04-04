@@ -31,7 +31,7 @@ typedef struct {
 
 enum PHASE {SWING, STANCE};
 
-#define g (float)9.8029 			 	// Local acceleration due to gravity: Ann Arbor = 9.80274 //TODO
+#define g (float)9.80274 			 	// Local acceleration due to gravity: Ann Arbor = 9.80274
 #define deg2rad (float) 0.0174532925199 // pi / 180
 
 #define RING_SIZE 8

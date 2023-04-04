@@ -49,9 +49,11 @@ SPI_HandleTypeDef hspi1;
 
 IMU IMU0;
 IMU IMU1;
+IMU IMU2;
 
 SensorData IMU0_data;
 SensorData IMU1_data;
+SensorData IMU2_data;
 
 volatile uint8_t periodic_tx_flag = 0;
 volatile uint8_t DRDY_flag = 0;
@@ -104,12 +106,13 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
-  IMU_init(&hspi1, &IMU0);
- // IMU_init(&hspi1, &IMU1);
+  IMU_init(&hspi1, &IMU0, 0);
+  IMU_init(&hspi1, &IMU1, 1);
+  IMU_init(&hspi1, &IMU2, 2);
 
   init_processing();
 
-  //TODO send "ambientization" vals to chip
+  IMU_zero(&IMU0, &IMU1, &IMU2);
 
   /* USER CODE END 2 */
 
@@ -125,9 +128,11 @@ int main(void)
 		  // Sample IMU Data
 		  IMU_readSensorData(&IMU0, &IMU0_data);
 		  IMU_readSensorData(&IMU1, &IMU1_data);
+		  IMU_readSensorData(&IMU2, &IMU2_data);
 
 		  calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
 
+		  DRDY_flag = 0;
 	  }
 
 	  if (periodic_tx_flag) {
@@ -245,6 +250,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(XBEE_CS_GPIO_Port, XBEE_CS_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOH, GPIO_PIN_3, GPIO_PIN_RESET);
+
   /*Configure GPIO pins : MAG_INT_Pin MAG_INT_TRG_Pin IMU3_INT1_Pin IMU3_INT2_Pin
                            IMU2_INT1_Pin IMU2_INT2_Pin IMU1_INT1_Pin IMU1_INT2_Pin */
   GPIO_InitStruct.Pin = MAG_INT_Pin|MAG_INT_TRG_Pin|IMU3_INT1_Pin|IMU3_INT2_Pin
@@ -288,6 +296,29 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SPI3_ATTN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PH3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 4, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 

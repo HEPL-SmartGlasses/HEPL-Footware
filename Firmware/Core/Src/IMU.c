@@ -7,11 +7,18 @@
 
 #include "IMU.h"
 
-void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU) {
+int8_t IMU_offsets[9] = {
+		282,334,505,
+		243,363,412,
+		611,-20,52,
+};
+
+void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU, uint8_t chipID) {
 	IMU->hspi = hspi;
-	IMU->X_offset = 0;
-	IMU->Y_offset = 0;
-	IMU->Z_offset = 0;
+	IMU->X_offset = IMU_offsets[3*chipID + 0];
+	IMU->Y_offset = IMU_offsets[3*chipID + 1];
+	IMU->Z_offset = IMU_offsets[3*chipID + 2];
+	IMU->chipID = chipID;
 
 	uint8_t buf[BUFFER_SIZE]; // Generic buffer for tx/rx
 
@@ -19,8 +26,6 @@ void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU) {
 	buf[0] = CTRL3_C;
 	buf[1] = 0x04;
 	IMU_writeRegister(IMU, buf, 1);
-
-	IMU_readRegister(IMU, CTRL3_C, buf, 1);
 
 	// Verify SPI connection to IMU
 	IMU_readRegister(IMU, WHO_AM_I, buf, 1);
@@ -43,6 +48,10 @@ void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU) {
 
 	buf[0] = CTRL5_C;
 	buf[1] = 0x60;
+	IMU_writeRegister(IMU, buf, 1);
+
+	buf[0] = CTRL6_C;
+	buf[1] = 0x00;
 	IMU_writeRegister(IMU, buf, 1);
 
 }
@@ -82,12 +91,12 @@ HAL_StatusTypeDef IMU_readRegister(IMU* IMU, uint8_t reg_addr, uint8_t* rx_buf, 
 
 	__disable_irq();
 
-	IMU_chipSelect();
+	IMU_chipSelect(IMU->chipID);
 
 	HAL_SPI_Transmit(IMU->hspi, (uint8_t *)reg_buffer, 1, SPI_TIMEOUT);
 	status = HAL_SPI_Receive(IMU->hspi, (uint8_t *)rx_buf, num_bytes, SPI_TIMEOUT);
 
-	IMU_chipRelease();
+	IMU_chipRelease(IMU->chipID);
 
 	__enable_irq();
 
@@ -99,31 +108,44 @@ HAL_StatusTypeDef IMU_writeRegister(IMU* IMU, uint8_t* tx_buf, int num_bytes) {
 
 	__disable_irq();
 
-	IMU_chipSelect();
+	IMU_chipSelect(IMU->chipID);
 
 	status = HAL_SPI_Transmit(IMU->hspi, (uint8_t *)tx_buf, num_bytes + 1, SPI_TIMEOUT);
 
-	IMU_chipRelease();
+	IMU_chipRelease(IMU->chipID);
 
 	__enable_irq();
 
 	return status;
 }
 
-void IMU_chipSelect(void) {
-	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,0); //TODO
+void IMU_chipSelect(uint8_t chipID) {
+	HAL_GPIO_WritePin(GPIOB, (1 << chipID), 0); // PB0,1,2 for IMU 0,1,2
 }
 
-void IMU_chipRelease(void) {
-	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,1); //TODO
+void IMU_chipRelease(uint8_t chipID) {
+	HAL_GPIO_WritePin(GPIOB, (1 << chipID), 1); // PB0,1,2 for IMU 0,1,2
 }
 
-void IMU_updateOffsetCorrections(IMU* IMU) {
-	// Read current accelerometer values
-	uint8_t buffer[BUFFER_SIZE];
-	IMU_readRegister(IMU, OUTX_L_XL, buffer, 6);
+void IMU_zero(IMU* imu0, IMU* imu1, IMU* imu2) {
+	uint8_t buf[12];
 
-	IMU->X_offset = (int16_t)((buffer[1] << 8) | buffer[0]);
-	IMU->Y_offset = (int16_t)((buffer[3] << 8) | buffer[2]);
-	IMU->Z_offset = (int16_t)((buffer[5] << 8) | buffer[4]);
+	buf[0] = X_OFS_USR;
+	buf[1] = imu0->X_offset;
+	buf[2] = imu0->Y_offset;
+	buf[3] = imu0->Z_offset;
+	IMU_writeRegister(imu0, buf, 3);
+
+	buf[0] = X_OFS_USR;
+	buf[1] = imu1->X_offset;
+	buf[2] = imu1->Y_offset;
+	buf[3] = imu1->Z_offset;
+	IMU_writeRegister(imu1, buf, 3);
+
+	buf[0] = X_OFS_USR;
+	buf[1] = imu2->X_offset;
+	buf[2] = imu2->Y_offset;
+	buf[3] = imu2->Z_offset;
+	IMU_writeRegister(imu2, buf, 3);
+
 }
