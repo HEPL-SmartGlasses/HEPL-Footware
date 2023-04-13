@@ -49,6 +49,11 @@ enum PHASE {SWING, STANCE};
 void init_processing(SensorData* IMU0_data, SensorData* IMU1_data);
 
 /*
+ *  Resets and re-inits
+ */
+void resetCurrentPosition(SensorData* IMU0_data, SensorData* IMU1_data);
+
+/*
  *  State estimation procedure
  */
 void calculateCorrectedState(
@@ -221,6 +226,15 @@ void getNextXLReading(SensorData* IMU0_data, SensorData* IMU1_data, float* xl0Ou
  *  Creates a linked-list of size W initialized to stance phase for ZUPT
  */
 void initZUPT(void);
+
+/*
+ *  Frees memory associated with ZUPT linked list
+ */
+void clearZUPT(void);
+
+// Saturating interval counter
+static enum PHASE curr_phase = STANCE;
+static uint8_t phase_counter = 0; // 0 --> stance side, PHASE_INTERVAL_THRESHOLD --> swing side
 
 /*
  *  ZUPT phase detection function

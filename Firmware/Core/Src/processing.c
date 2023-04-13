@@ -32,13 +32,13 @@ uint8_t xl_oldest = 0;
 /*
  *  Matrix data
  */
-float m_b0_f32[3] = { // (3x1)
+const float m_b0_f32[3] = { // (3x1)
 		-0.0127,
 		-0.0127,
 		0,
 }; // Relative position of IMUs in board frame (b0, so relative to IMU0), unit (m)
 
-float g_n_f32[3] = { // (3x1)
+const float g_n_f32[3] = { // (3x1)
 		0,
 		0,
 		g,
@@ -109,7 +109,25 @@ float x_curr_f32[12] = { // (12x1)
 		0,
 		0,
 		0,
-}; // State variable at k, x = [r0_n, r1_n, v0_n, v1_n]^T, init to all zeros
+}; // State variable at k, x = [r0_n, r1_n, v0_n, v1_n]^T
+
+const float x_init_f32[12] = { // (12x1)
+		0,
+		0,
+		0,
+
+		-0.0127,
+		-0.0127,
+		0,
+
+		0,
+		0,
+		0,
+
+		0,
+		0,
+		0,
+}; // State variable at k, x = [r0_n, r1_n, v0_n, v1_n]^T, used for RESET
 
 float F_matrix_f32[144] = { // (12x12)
 		1,0,0,	0,0,0,	1,0,0,	0,0,0,
@@ -157,7 +175,7 @@ float u_curr_f32[6] = { // (6x1)
 		0,
 }; // Input vector populated with IMU data in nav frame, init to all zeros, units (m/s^2)
 
-float H_swing_f32[72] = { // (6x12)
+const float H_swing_f32[72] = { // (6x12)
 		0,0,0, 0,0,0, -1,0,0, 1,0,0,
 		0,0,0, 0,0,0, 0,-1,0, 0,1,0,
 		0,0,0, 0,0,0, 0,0,-1, 0,0,1,
@@ -167,7 +185,7 @@ float H_swing_f32[72] = { // (6x12)
 		0,0,-1, 0,0,1, 0,0,0, 0,0,0,
 }; // Observation matrix H_1, swing phase
 
-float H_stance_f32[144] = { // (12x12)
+const float H_stance_f32[144] = { // (12x12)
 		0,0,0, 0,0,0, -1,0,0, 1,0,0,
 		0,0,0, 0,0,0, 0,-1,0, 0,1,0,
 		0,0,0, 0,0,0, 0,0,-1, 0,0,1,
@@ -193,7 +211,7 @@ float Z_swing_f32[6] = { // (6x1)
 		0,
 		0,
 		0,
-}; // Observation matrix H_1, swing phase, init to all zeros
+}; // Observation matrix Z, swing phase, init to all zeros
 
 float Z_stance_f32[12] = { // (12x1)
 		0,
@@ -211,7 +229,7 @@ float Z_stance_f32[12] = { // (12x1)
 		0,
 		0,
 		0,
-}; // Observation matrix H_2, stance phase, init to all zeros (last 2 vectors stay as zero)
+}; // Observation vector Z, stance phase, init to all zeros (last 2 vectors stay as zero)
 
 float K_swing_f32[72] = { // (12x6)
 		0,0,0, 0,0,0,
@@ -255,7 +273,7 @@ float K_stance_f32[144] = { // (12x12)
 #define r_tun 2.4 * g / 1000 * dT
 #define r_tune 5
 
-float R_swing_f32[36] = { // (6x6)
+const float R_swing_f32[36] = { // (6x6)
 		r_tune,0,0,	0,0,0,
 		0,r_tune,0,	0,0,0,
 		0,0,r_tune,	0,0,0,
@@ -265,7 +283,7 @@ float R_swing_f32[36] = { // (6x6)
 		0,0,0,		0,0,r_tune,
 }; // Observation noise covariance, swing phase, init to // TODO fill this in
 
-float R_stance_f32[144] = { // (12x12)
+const float R_stance_f32[144] = { // (12x12)
 		r_tune,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,r_tune,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,r_tune,	0,0,0,	0,0,0,	0,0,0,
@@ -283,7 +301,7 @@ float R_stance_f32[144] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,r_tune,
 }; // Observation noise covariance, stance phase, init to // TODO fill this in
 
-float P_prev_f32[] = { // (12x12)
+float P_prev_f32[144] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -301,7 +319,7 @@ float P_prev_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,16,
 }; // A posteriori covariance, k-1
 
-float P_curr_f32[] = { // (12x12)
+float P_curr_f32[144] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -319,7 +337,25 @@ float P_curr_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,16,
 }; // A posteriori covariance, k
 
-float P_minus_f32[] = { // (12x12)
+float P_init_f32[144] = { // (12x12)
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+
+		0,0,0,	0,0,0,	16,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,16,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,16,	0,0,0,
+
+		0,0,0,	0,0,0,	0,0,0,	16,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,16,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,16,
+}; // A posteriori covariance, k
+
+float P_minus_f32[144] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -337,7 +373,7 @@ float P_minus_f32[] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,16,
 }; // A priori covariance, k
 
-float Q_prev_f32[] = { // (12x12)
+float Q_prev_f32[144] = { // (12x12)
 		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
 		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
 		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
@@ -508,6 +544,30 @@ void init_processing(SensorData* IMU0_data, SensorData* IMU1_data) {
 
 	initQuaternion(IMU0_data, IMU1_data);
 
+}
+
+void resetCurrentPosition(SensorData* IMU0_data, SensorData* IMU1_data) {
+
+	int i;
+	int j;
+	for (i = 0; i < x_curr.numRows; ++i) {
+		x_curr.pData[i] = x_init_f32[i];
+	}
+
+	for (i = 0; i < P_curr.numRows; ++i) {
+		for (j = 0; j < P_curr.numCols; ++j) {
+			P_curr.pData[(i*P_curr.numCols) + j] = P_init_f32[(i*P_curr.numCols) + j];
+		}
+	}
+
+	updatePreviousMatrices();
+
+	clearZUPT();
+	initZUPT(); // Initialize ZUPT phase detector
+
+	initRingBuffers();
+
+	initQuaternion(IMU0_data, IMU1_data);
 }
 
 void calculateCorrectedState(
@@ -1239,6 +1299,25 @@ void initZUPT(void) {
 	}
 }
 
+void clearZUPT(void) {
+	ZUPTNode* tempNode = ZUPTHead;
+
+	curr_phase = STANCE;
+	phase_counter = 0;
+
+	if (tempNode == NULL) {
+		return;
+	}
+
+	while (tempNode->next != NULL) {
+		ZUPTNode* tempNode2 = tempNode->next;
+
+		free(tempNode);
+
+		tempNode = tempNode2;
+	}
+}
+
 enum PHASE detectZUPTPhase(void) {
 	/*
 	 *  1) Move head to next, free head
@@ -1247,10 +1326,6 @@ enum PHASE detectZUPTPhase(void) {
 	 *  4) Scale by 1/(sigma^2 * W) --> Tw
 	 *  5) Compare Tw to threshold, return stance if less than AND interval reqs are met
 	 */
-
-	// Saturating interval counter
-	static enum PHASE curr_phase = STANCE;
-	static uint8_t phase_counter = 0; // 0 --> stance side, PHASE_INTERVAL_THRESHOLD --> swing side
 
 	// 1) Move head to next, free head
 	assert(ZUPTHead != NULL);

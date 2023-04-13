@@ -184,7 +184,7 @@ int main(void)
 		  // Sample IMU Data
 		  IMU_readSensorData(&IMU0, &IMU0_data);
 		  IMU_readSensorData(&IMU1, &IMU1_data);
-		  IMU_readSensorData(&IMU2, &IMU2_data);
+		  //IMU_readSensorData(&IMU2, &IMU2_data);
 
 		  calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
 
@@ -195,9 +195,13 @@ int main(void)
 
 		  uint8_t rx_cmd = sendCurrentPosition(RUN_STATE);
 
-		  if (rx_cmd == 0xFF) {
+		  if (rx_cmd == 0xAA) {
 			  // Reset command from glasses board
-			  //resetCurrentPosition();
+
+			  IMU_readSensorData(&IMU0, &IMU0_data);
+			  IMU_readSensorData(&IMU1, &IMU1_data);
+
+			  resetCurrentPosition(&IMU0_data, &IMU1_data);
 
 			  sendCurrentPosition(RESET_STATE);
 		  }
@@ -310,11 +314,11 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
