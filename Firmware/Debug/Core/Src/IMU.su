@@ -3,7 +3,7 @@
 ../Core/Src/IMU.c:122:6:IMU_chipSelect	8	static
 ../Core/Src/IMU.c:126:6:IMU_chipRelease	8	static
 ../Core/Src/IMU.c:87:19:IMU_readRegister	24	static,ignoring_inline_asm
-../Core/Src/IMU.c:73:6:IMU_readSensorData	24	static
+../Core/Src/IMU.c:73:6:IMU_readSensorData	32	static
 ../Core/Src/IMU.c:106:19:IMU_writeRegister	16	static,ignoring_inline_asm
 ../Core/Src/IMU.c:16:6:IMU_init	24	static
 ../Core/Src/IMU.c:130:6:IMU_zero	32	static

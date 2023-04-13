@@ -25,6 +25,7 @@
 #include "IMU.h"
 #include "stm32l4xx_hal.h"
 #include "processing.h"
+#include "XBee.h"
 
 /* USER CODE END Includes */
 
@@ -35,6 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define TX_DATA_BUF_SZ 9
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,8 +46,13 @@
 
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi1;
+SPI_HandleTypeDef hspi3;
+
+TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
+
+SPI_HandleTypeDef XBEE_SPI;
 
 IMU IMU0;
 IMU IMU1;
@@ -55,8 +62,17 @@ SensorData IMU0_data;
 SensorData IMU1_data;
 SensorData IMU2_data;
 
-volatile uint8_t periodic_tx_flag = 0;
+const GPIO_TypeDef* XBEE_CS_PORT = GPIOA;
+const int XBEE_CS_PIN = (int) GPIO_PIN_15;
+
 volatile uint8_t DRDY_flag = 0;
+
+volatile uint8_t periodic_tx_flag = 1;
+
+enum STATE {
+		RESET_STATE,
+		RUN_STATE
+};
 
 volatile float timeDelta = 1.0F/104; // Default to 1/104Hz (IMU sample rate)
 
@@ -66,12 +82,40 @@ volatile float timeDelta = 1.0F/104; // Default to 1/104Hz (IMU sample rate)
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_SPI3_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+uint8_t sendCurrentPosition(uint8_t state) {
+	Position pos;
+
+	returnCurrentPosition(&pos);
+
+	uint32_t posX = *(int*)&pos.X;
+	uint32_t posY = *(int*)&pos.Y;
+
+	uint8_t data_buf[TX_DATA_BUF_SZ];
+
+	int i;
+	for (i = 0; i < 3; ++i) {
+	  data_buf[i] = (posX >> (3-i)*8) & 0xFF;
+	}
+	for (i = 0; i < 3; ++i) {
+	  data_buf[i+4] = (posY >> (3-i)*8) & 0xFF;
+	}
+	data_buf[8] = state;
+
+	uint8_t xbee_rx_buf[32];
+
+	XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ);
+
+	return xbee_rx_buf[0];
+}
 
 /* USER CODE END 0 */
 
@@ -104,15 +148,27 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI1_Init();
+  MX_SPI3_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+
+  if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK) {
+      /* Starting Error */
+      Error_Handler();
+  }
+
+  XBEE_SPI = hspi3;
 
   IMU_init(&hspi1, &IMU0, 0);
   IMU_init(&hspi1, &IMU1, 1);
   IMU_init(&hspi1, &IMU2, 2);
 
-  init_processing();
+  HAL_Delay(100);
 
-  IMU_zero(&IMU0, &IMU1, &IMU2);
+  IMU_readSensorData(&IMU0, &IMU0_data);
+  IMU_readSensorData(&IMU1, &IMU1_data);
+
+  init_processing(&IMU0_data, &IMU1_data);
 
   /* USER CODE END 2 */
 
@@ -123,7 +179,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if (DRDY_flag || 1) {
+	  if (DRDY_flag) {
 
 		  // Sample IMU Data
 		  IMU_readSensorData(&IMU0, &IMU0_data);
@@ -137,10 +193,15 @@ int main(void)
 
 	  if (periodic_tx_flag) {
 
-		  // TODO Getter function from processing.h
+		  uint8_t rx_cmd = sendCurrentPosition(RUN_STATE);
 
-		  // TODO XBee TX function
+		  if (rx_cmd == 0xFF) {
+			  // Reset command from glasses board
+			  //resetCurrentPosition();
 
+			  sendCurrentPosition(RESET_STATE);
+		  }
+		  periodic_tx_flag = 0;
 	  }
   }
   /* USER CODE END 3 */
@@ -231,6 +292,104 @@ static void MX_SPI1_Init(void)
 }
 
 /**
+  * @brief SPI3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI3_Init(void)
+{
+
+  /* USER CODE BEGIN SPI3_Init 0 */
+
+  /* USER CODE END SPI3_Init 0 */
+
+  /* USER CODE BEGIN SPI3_Init 1 */
+
+  /* USER CODE END SPI3_Init 1 */
+  /* SPI3 parameter configuration*/
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_MASTER;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3.Init.CRCPolynomial = 7;
+  hspi3.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi3.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  if (HAL_SPI_Init(&hspi3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI3_Init 2 */
+
+  /* USER CODE END SPI3_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 7999;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 200;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -282,14 +441,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(XBEE_CS_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PB3 PB4 PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SPI3_ATTN_Pin */
   GPIO_InitStruct.Pin = SPI3_ATTN_Pin;

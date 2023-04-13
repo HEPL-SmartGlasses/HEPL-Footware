@@ -27,3 +27,5 @@ reqs
 sigma
 exp
 cos
+sqrt
+conjugation

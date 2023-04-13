@@ -126,9 +126,9 @@ typedef struct {
 	SPI_HandleTypeDef* hspi; // SPI bus
 
 	// Accelerometer Offsets
-	int8_t X_offset;
-	int8_t Y_offset;
-	int8_t Z_offset;
+	float X_offset;
+	float Y_offset;
+	float Z_offset;
 
 	uint8_t chipID; // Integer representing IMU0,1
 

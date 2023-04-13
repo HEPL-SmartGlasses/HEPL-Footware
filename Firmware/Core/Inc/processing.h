@@ -46,7 +46,7 @@ enum PHASE {SWING, STANCE};
 /*
  *  Define matrix variables
  */
-void init_processing(void);
+void init_processing(SensorData* IMU0_data, SensorData* IMU1_data);
 
 /*
  *  State estimation procedure
@@ -173,7 +173,24 @@ void updateZiVector(
 void updatePreviousMatrices(void);
 
 /*
- *  Do cross product of two inputed vectors
+ *  Do dot product of two vectors
+ */
+float dot_f32(float* a, float* b);
+
+/*
+ *  Do cross product of two vectors
+ *  REQUIRES: a, b, c must point to different vectors
+ */
+void cross_f32(float* a, float* b, float* c);
+
+/*
+ *  Return |vector|
+ */
+float vec_mag_f32(float* vec);
+
+/*
+ *  Do cross product of two inputed matrix instances (vectors)
+ *  Wrapper for cross_f32
  */
 void cross_product(
 		arm_matrix_instance_f32* a,
@@ -184,6 +201,11 @@ void cross_product(
  *  Creates ring buffers for gyro x, y, z
  */
 void initRingBuffers(void);
+
+/*
+ *  Initialize quaternion based on initial IMU acceleration
+ */
+void initQuaternion(SensorData* IMU0_data, SensorData* IMU1_data);
 
 /*
  *  Updates buffer with new reading, outputs averaged reading

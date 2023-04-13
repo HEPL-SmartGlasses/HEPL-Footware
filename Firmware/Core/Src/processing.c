@@ -33,7 +33,7 @@ uint8_t xl_oldest = 0;
  *  Matrix data
  */
 float m_b0_f32[3] = { // (3x1)
-		0.0127,
+		-0.0127,
 		-0.0127,
 		0,
 }; // Relative position of IMUs in board frame (b0, so relative to IMU0), unit (m)
@@ -63,7 +63,10 @@ float w_avg_b0_f32[3] = { // (3x1)
 }; // Average angular rate vector of b0 relative to nav in b0, unit (deg/s)
 
 float q_f32[4] = { // (4x1)
-		1.9612, -0.0049, -0.2758, 0,
+		1,
+		0,
+		0,
+		0,
 }; // Quaternion representing rotation of board frame from nav frame, init to Identity quaternion (1, 0, 0, 0)
 
 float rotation_b0_n_f32[9] = { // (3x3)
@@ -77,7 +80,7 @@ float x_prev_f32[12] = { // (12x1)
 		0,
 		0,
 
-		0.0127,
+		-0.0127,
 		-0.0127,
 		0,
 
@@ -95,7 +98,7 @@ float x_curr_f32[12] = { // (12x1)
 		0,
 		0,
 
-		0.0127,
+		-0.0127,
 		-0.0127,
 		0,
 
@@ -387,7 +390,7 @@ arm_matrix_instance_f32 P_minus;		// A priori covariance, k
 arm_matrix_instance_f32 Q_prev;			// Process noise covariance, k-1
 
 
-void init_processing(void) {
+void init_processing(SensorData* IMU0_data, SensorData* IMU1_data) {
 	uint16_t numRows, numCols; // temp vars
 
 	/*
@@ -503,7 +506,7 @@ void init_processing(void) {
 
 	initRingBuffers();
 
-	arm_quaternion_normalize_f32(q_f32, q_f32, 1); // normalize initial quaternion
+	initQuaternion(IMU0_data, IMU1_data);
 
 }
 
@@ -631,8 +634,7 @@ void calculateAvgAngularRate(
 	getNextGyroReading(IMU0_data, IMU1_data, w_avg_b0_f32);
 
 	// Determine |w_avg_b0|
-	w_avg_b0_mag = (w_avg_b0_f32[0]*w_avg_b0_f32[0]) + (w_avg_b0_f32[1]*w_avg_b0_f32[1]) + (w_avg_b0_f32[2]*w_avg_b0_f32[2]);
-	arm_sqrt_f32(w_avg_b0_mag, &w_avg_b0_mag);
+	w_avg_b0_mag = vec_mag_f32(w_avg_b0_f32);
 }
 
 void calculateRotationMatrix(
@@ -1067,6 +1069,22 @@ void updatePreviousMatrices(void) { // TODO Verify this
 	// TODO Update Q(k-1) somehow
 }
 
+float dot_f32(float* a, float* b) {
+	return (a[0]+b[0]) + (a[1]+b[1]) + (a[2]+b[2]);
+}
+
+void cross_f32(float* a, float* b, float* c) {
+	c[0] = a[1] * b[2] - a[2] * b[1];
+	c[1] = a[2] * b[0] - a[0] * b[2];
+	c[2] = a[0] * b[1] - a[1] * b[0];
+}
+
+float vec_mag_f32(float* vec) {
+	float mag = (vec[0]*vec[0]) + (vec[1]*vec[1]) + (vec[2]*vec[2]);
+	arm_sqrt_f32(mag, &mag);
+	return mag;
+}
+
 void cross_product(
 		arm_matrix_instance_f32* a,
 		arm_matrix_instance_f32* b,
@@ -1076,9 +1094,7 @@ void cross_product(
 	float aData[3] = {a->pData[0], a->pData[1], a->pData[2]};
 	float bData[3] = {b->pData[0], b->pData[1], b->pData[2]};
 
-	c->pData[0] = aData[1] * bData[2] - aData[2] * bData[1];
-	c->pData[1] = aData[2] * bData[0] - aData[0] * bData[2];
-	c->pData[2] = aData[0] * bData[1] - aData[1] * bData[0];
+	cross_f32(aData, bData, c->pData);
 }
 
 void initRingBuffers(void) {
@@ -1094,6 +1110,64 @@ void initRingBuffers(void) {
 		xl1_avg_y_ring[i] = 0;
 		xl1_avg_z_ring[i] = 0;
 	}
+}
+
+void initQuaternion(SensorData* IMU0_data, SensorData* IMU1_data) {
+	float avg_XL[3];
+	avg_XL[0] = (IMU0_data->XL_X + IMU1_data->XL_X) / 2;
+	avg_XL[1] = (IMU0_data->XL_Y + IMU1_data->XL_Y) / 2;
+	avg_XL[2] = (IMU0_data->XL_Z + IMU1_data->XL_Z) / 2;
+
+	float mag_avg_XL = vec_mag_f32(avg_XL);
+
+	// Normalize average acceleration vector
+	avg_XL[0] /= mag_avg_XL;
+	avg_XL[1] /= mag_avg_XL;
+	avg_XL[2] /= mag_avg_XL;
+
+	float norm_g[3] = {0,0,1}; // Normalized vector for g_nav
+
+	// q = [1+dot(r, r') cross(r, r') --> From conjugation: r' = q x [0 r] x q*
+
+	float dot_prod = dot_f32(avg_XL, norm_g);
+	float cross_prod[3];
+	cross_f32(avg_XL, norm_g, cross_prod);
+
+	if (dot_prod > 0.999999) {
+		q_f32[0] = 1;
+		q_f32[1] = 0;
+		q_f32[2] = 0;
+		q_f32[3] = 0;
+
+		return;
+
+	} else if (dot_prod < -0.999999) {
+		float xUnit[3] = {1,0,0};
+		float yUnit[3] = {0,1,0};
+		float tempVec[3];
+        cross_f32(xUnit, avg_XL, tempVec);
+
+        float tempVecMag = vec_mag_f32(tempVec);
+
+        if (tempVecMag < 0.000001) {
+            cross_f32(yUnit, avg_XL, tempVec);
+			tempVecMag = vec_mag_f32(tempVec);
+		}
+
+        q_f32[0] = 0;
+        q_f32[1] = tempVec[0] / tempVecMag;
+        q_f32[2] = tempVec[1] / tempVecMag;
+        q_f32[3] = tempVec[2] / tempVecMag;
+        return;
+    }
+
+	q_f32[0] = 1 + dot_prod;
+	q_f32[1] = cross_prod[0];
+	q_f32[2] = cross_prod[1];
+	q_f32[3] = cross_prod[2];
+
+	arm_quaternion_normalize_f32(q_f32, q_f32, 1); // normalize initial quaternion
+
 }
 
 void getNextGyroReading(SensorData* IMU0_data, SensorData* IMU1_data, float* gyroOut) {

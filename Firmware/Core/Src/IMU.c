@@ -7,10 +7,10 @@
 
 #include "IMU.h"
 
-int8_t IMU_offsets[9] = {
-		282,334,505,
-		243,363,412,
-		611,-20,52,
+float IMU_offsets[9] = {
+		-0.585054584,0.268043667,0.3972789,
+		-0.0622244254,0.318301857,0.320695,
+		-0.0933366343,-0.3661668,0.2704373,
 };
 
 void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU, uint8_t chipID) {
@@ -51,7 +51,7 @@ void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU, uint8_t chipID) {
 	IMU_writeRegister(IMU, buf, 1);
 
 	buf[0] = CTRL6_C;
-	buf[1] = 0x00;
+	buf[1] = 0x04;
 	IMU_writeRegister(IMU, buf, 1);
 
 }
@@ -79,9 +79,9 @@ void IMU_readSensorData(IMU* IMU, SensorData* data) {
 	data->G_Y = IMU_convertGyro(buf[3], buf[2]);
 	data->G_Z = IMU_convertGyro(buf[5], buf[4]);
 
-	data->XL_X = IMU_convertAccel(buf[7], buf[6]);
-	data->XL_Y = IMU_convertAccel(buf[9], buf[8]);
-	data->XL_Z = IMU_convertAccel(buf[11], buf[10]);
+	data->XL_X = IMU_convertAccel(buf[7], buf[6]) + IMU->X_offset;
+	data->XL_Y = IMU_convertAccel(buf[9], buf[8]) + IMU->Y_offset;
+	data->XL_Z = IMU_convertAccel(buf[11], buf[10]) - IMU->Z_offset;
 }
 
 HAL_StatusTypeDef IMU_readRegister(IMU* IMU, uint8_t reg_addr, uint8_t* rx_buf, int num_bytes) {
