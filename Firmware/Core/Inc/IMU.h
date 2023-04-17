@@ -118,7 +118,7 @@
 #define FULLSCALE_ACCEL				8		// Linear Acceleration Full-Scale (+/- 8g)
 #define XL_SCALE_FACTOR				(float)g*FULLSCALE_ACCEL/32768	// Full-Scale Acceleration / Max LSB value (32768)
 #define FULLSCALE_GYRO				1000	// Angular Rate Full-Scale (1000 deg/s)
-#define GYRO_SCALE_FACTOR			(float)FULLSCALE_GYRO/32768	// Full-Scale Angular Rate / Max LSB value (32768)
+#define GYRO_SCALE_FACTOR			(float)FULLSCALE_GYRO/28570	// Full-Scale Angular Rate / Max LSB value (32768)
 #define SPI_TIMEOUT					0x01
 #define BUFFER_SIZE					12
 
@@ -129,6 +129,11 @@ typedef struct {
 	float X_offset;
 	float Y_offset;
 	float Z_offset;
+
+	// Gyro Offsets
+	float GX_offset;
+	float GY_offset;
+	float GZ_offset;
 
 	uint8_t chipID; // Integer representing IMU0,1
 

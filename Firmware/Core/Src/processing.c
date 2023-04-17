@@ -34,7 +34,7 @@ uint8_t xl_oldest = 0;
  */
 const float m_b0_f32[3] = { // (3x1)
 		-0.0127,
-		-0.0127,
+		+0.0127,
 		0,
 }; // Relative position of IMUs in board frame (b0, so relative to IMU0), unit (m)
 
@@ -81,7 +81,7 @@ float x_prev_f32[12] = { // (12x1)
 		0,
 
 		-0.0127,
-		-0.0127,
+		+0.0127,
 		0,
 
 		0,
@@ -99,7 +99,7 @@ float x_curr_f32[12] = { // (12x1)
 		0,
 
 		-0.0127,
-		-0.0127,
+		+0.0127,
 		0,
 
 		0,
@@ -117,7 +117,7 @@ const float x_init_f32[12] = { // (12x1)
 		0,
 
 		-0.0127,
-		-0.0127,
+		+0.0127,
 		0,
 
 		0,
@@ -267,138 +267,170 @@ float K_stance_f32[144] = { // (12x12)
 		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 }; // Kalman Gain K_2, stance phase, init to all zeros
 
-#define dT 0.005
+#define xVar 0.41569940440904957 * 2
+#define yVar 0.3544485509713772 * 2
+#define zVar 0.7406725369262939 * 2
+#define xyCovar 0.01641281882542819 * 2
+#define xzCovar -0.41979413683597244 * 2
+#define yzCovar -0.34141210838259917 * 2
+
+#define dT 1/50
 #define dT2 dT*dT
 #define dT3 dT2*dT
-#define r_tun 2.4 * g / 1000 * dT
+
 #define r_tune 5
 
-const float R_swing_f32[36] = { // (6x6)
-		r_tune,0,0,	0,0,0,
-		0,r_tune,0,	0,0,0,
-		0,0,r_tune,	0,0,0,
+uint8_t diverging_flag = 0;
 
-		0,0,0,		r_tune,0,0,
-		0,0,0,		0,r_tune,0,
-		0,0,0,		0,0,r_tune,
+const float R_swing_f32[36] = { // (6x6)
+		xVar,xyCovar,xzCovar,	0,0,0,
+		xyCovar,yVar,yzCovar,	0,0,0,
+		xzCovar,yzCovar,zVar,	0,0,0,
+
+		0,0,0,		xVar,xyCovar,xzCovar,
+		0,0,0,		xyCovar,yVar,yzCovar,
+		0,0,0,		xzCovar,yzCovar,zVar,
 }; // Observation noise covariance, swing phase, init to // TODO fill this in
 
 const float R_stance_f32[144] = { // (12x12)
-		r_tune,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,r_tune,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,r_tune,	0,0,0,	0,0,0,	0,0,0,
+		xVar,xyCovar,xzCovar,	0,0,0,	0,0,0,	0,0,0,
+		xyCovar,yVar,yzCovar,	0,0,0,	0,0,0,	0,0,0,
+		xzCovar,yzCovar,zVar,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,			r_tune,0,0,	0,0,0,	0,0,0,
-		0,0,0,			0,r_tune,0,	0,0,0,	0,0,0,
-		0,0,0,			0,0,r_tune,	0,0,0,	0,0,0,
+		0,0,0,	xVar,xyCovar,xzCovar,	0,0,0,	0,0,0,
+		0,0,0,	xyCovar,yVar,yzCovar,	0,0,0,	0,0,0,
+		0,0,0,	xzCovar,yzCovar,zVar,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	r_tune,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,r_tune,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,r_tune,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	r_tune,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,r_tune,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,r_tune,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0,0,0,	0,0,0,	0,0,0,	0,0,0,
 }; // Observation noise covariance, stance phase, init to // TODO fill this in
 
 float P_prev_f32[144] = { // (12x12)
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0.5*dT3,0,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0.5*dT3,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0,0.5*dT3,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0,0,	0.5*dT3,0,0,	0,0,0,	0,0,0,
+						0,0,0,	0,0.5*dT3,0,	0,0,0,	0,0,0,
+						0,0,0,	0,0,0.5*dT3,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	16,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,16,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,16,	0,0,0,
+						0,0,0,	0,0,0,	1.5*dT2/100,0,0,	0,0,0,
+						0,0,0,	0,0,0,	0,1.5*dT2/100,0,	0,0,0,
+						0,0,0,	0,0,0,	0,0,1.5*dT2/100,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	16,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,16,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,16,
+						0,0,0,	0,0,0,	0,0,0,	1.5*dT2/100,0,0,
+						0,0,0,	0,0,0,	0,0,0,	0,1.5*dT2/100,0,
+						0,0,0,	0,0,0,	0,0,0,	0,0,1.5*dT2/100,
 }; // A posteriori covariance, k-1
 
 float P_curr_f32[144] = { // (12x12)
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0.5*dT3,0,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0.5*dT3,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0,0.5*dT3,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0,0,	0.5*dT3,0,0,	0,0,0,	0,0,0,
+						0,0,0,	0,0.5*dT3,0,	0,0,0,	0,0,0,
+						0,0,0,	0,0,0.5*dT3,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	16,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,16,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,16,	0,0,0,
+						0,0,0,	0,0,0,	1.5*dT2/100,0,0,	0,0,0,
+						0,0,0,	0,0,0,	0,1.5*dT2/100,0,	0,0,0,
+						0,0,0,	0,0,0,	0,0,1.5*dT2/100,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	16,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,16,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,16,
+						0,0,0,	0,0,0,	0,0,0,	1.5*dT2/100,0,0,
+						0,0,0,	0,0,0,	0,0,0,	0,1.5*dT2/100,0,
+						0,0,0,	0,0,0,	0,0,0,	0,0,1.5*dT2/100,
 }; // A posteriori covariance, k
 
 float P_init_f32[144] = { // (12x12)
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0.5*dT3,0,0,	0,0,0,	0,0,0,	0,0,0,
+				0,0.5*dT3,0,	0,0,0,	0,0,0,	0,0,0,
+				0,0,0.5*dT3,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+				0,0,0,	0.5*dT3,0,0,	0,0,0,	0,0,0,
+				0,0,0,	0,0.5*dT3,0,	0,0,0,	0,0,0,
+				0,0,0,	0,0,0.5*dT3,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	16,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,16,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,16,	0,0,0,
+				0,0,0,	0,0,0,	1.5*dT2/100,0,0,	0,0,0,
+				0,0,0,	0,0,0,	0,1.5*dT2/100,0,	0,0,0,
+				0,0,0,	0,0,0,	0,0,1.5*dT2/100,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	16,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,16,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,16,
+				0,0,0,	0,0,0,	0,0,0,	1.5*dT2/100,0,0,
+				0,0,0,	0,0,0,	0,0,0,	0,1.5*dT2/100,0,
+				0,0,0,	0,0,0,	0,0,0,	0,0,1.5*dT2/100,
 }; // A posteriori covariance, k
 
 float P_minus_f32[144] = { // (12x12)
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+		0.5*dT3,0,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0.5*dT3,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0,0.5*dT3,	0,0,0,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,0,
+						0,0,0,	0.5*dT3,0,0,	0,0,0,	0,0,0,
+						0,0,0,	0,0.5*dT3,0,	0,0,0,	0,0,0,
+						0,0,0,	0,0,0.5*dT3,	0,0,0,	0,0,0,
 
-		0,0,0,	0,0,0,	16,0,0,	0,0,0,
-		0,0,0,	0,0,0,	0,16,0,	0,0,0,
-		0,0,0,	0,0,0,	0,0,16,	0,0,0,
+						0,0,0,	0,0,0,	1.5*dT2/100,0,0,	0,0,0,
+						0,0,0,	0,0,0,	0,1.5*dT2/100,0,	0,0,0,
+						0,0,0,	0,0,0,	0,0,1.5*dT2/100,	0,0,0,
 
-		0,0,0,	0,0,0,	0,0,0,	16,0,0,
-		0,0,0,	0,0,0,	0,0,0,	0,16,0,
-		0,0,0,	0,0,0,	0,0,0,	0,0,16,
+						0,0,0,	0,0,0,	0,0,0,	1.5*dT2/100,0,0,
+						0,0,0,	0,0,0,	0,0,0,	0,1.5*dT2/100,0,
+						0,0,0,	0,0,0,	0,0,0,	0,0,1.5*dT2/100,
 }; // A priori covariance, k
 
 float Q_prev_f32[144] = { // (12x12)
-		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
-		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
-		4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,
+		0.5*dT3,0,0,	0,0,0,	0.75*dT2,0,0,	0,0,0,
+		0,0.5*dT3,0,	0,0,0,	0,0.75*dT2,0,	0,0,0,
+		0,0,0.5*dT3,	0,0,0,	0,0,0.75*dT2,	0,0,0,
 
-		0,0,0,	4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,
-		0,0,0,	4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,
-		0,0,0,	4*dT3,4*dT3,4*dT3,	0,0,0,	6*dT2,6*dT2,6*dT2,
+		0,0,0,	0.5*dT3,0,0,	0,0,0,	0.75*dT2,0,0,
+		0,0,0,	0,0.5*dT3,0,	0,0,0,	0,0.75*dT2,0,
+		0,0,0,	0,0,0.5*dT3,	0,0,0,	0,0,0.75*dT2,
 
-		6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,	0,0,0,
-		6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,	0,0,0,
-		6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,	0,0,0,
+		0.75*dT2,0,0,	0,0,0,	1.5*dT,0,0,	0,0,0,
+		0,0.75*dT2,0,	0,0,0,	0,1.5*dT,0,	0,0,0,
+		0,0,0.75*dT2,	0,0,0,	0,0,1.5*dT,	0,0,0,
 
-		0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,
-		0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,
-		0,0,0,	6*dT2,6*dT2,6*dT2,	0,0,0,	12*dT,12*dT,12*dT,
-}; // Process noise covariance, k-1, init to // TODO fill this in
+		0,0,0,	0.75*dT2,0,0,	0,0,0,	1.5*dT,0,0,
+		0,0,0,	0,0.75*dT2,0,	0,0,0,	0,1.5*dT,0,
+		0,0,0,	0,0,0.75*dT2,	0,0,0,	0,0,1.5*dT,
+}; // Process noise covariance, k-1, init to stuff
+
+/*
+ *  Temp arrays
+ */
+
+float temp12x1_0_f32[12];
+float temp12x1_1_f32[12];
+
+float tempNx12_0_f32[144];
+float temp12xN_0_f32[144];
+float temp12xN_1_f32[144];
+
+float tempNxN_0_f32[144];
+float tempNxN_1_f32[144];
+float tempNxN_2_f32[144];
 
 /*
  *  Debug arrays
  */
-float phase_out = 0;
+int phase_out = 0;
 float optimal_f32[3] = {0,0,0,};	// x, y, z
 float correction_f32[3] = {0,0,0,}; // x, y, z
 float prediction_f32[3] = {0,0,0,}; // x, y, z
 float gain_f32[3] = {0,0,0,}; // x, y, z
+
+// ZUPT
+enum PHASE curr_phase = STANCE;
+
+// Saturating interval counter
+uint8_t phase_counter = 0; // 0 --> stance side, PHASE_INTERVAL_THRESHOLD --> swing side
+
+
 
 /*
  *  Matrix instances
@@ -540,7 +572,7 @@ void init_processing(SensorData* IMU0_data, SensorData* IMU1_data) {
 
 	initZUPT(); // Initialize ZUPT phase detector
 
-	initRingBuffers();
+	initRingBuffers(IMU0_data, IMU1_data);
 
 	initQuaternion(IMU0_data, IMU1_data);
 
@@ -565,7 +597,7 @@ void resetCurrentPosition(SensorData* IMU0_data, SensorData* IMU1_data) {
 	clearZUPT();
 	initZUPT(); // Initialize ZUPT phase detector
 
-	initRingBuffers();
+	initRingBuffers(IMU0_data, IMU1_data);
 
 	initQuaternion(IMU0_data, IMU1_data);
 }
@@ -628,7 +660,7 @@ void calculateCorrectedState(
 		x_curr_f32[2] = 0;
 		x_curr_f32[5] = 0;
 	}
-	float v_gate = 0.3;
+	float v_gate = 10;
 	if (fabs(x_curr_f32[8]) > v_gate) {
 		x_curr_f32[8] = v_gate * (x_curr_f32[8] > 0 ? 1 : -1);
 	}
@@ -636,14 +668,17 @@ void calculateCorrectedState(
 		x_curr_f32[11] = v_gate * (x_curr_f32[11] > 0 ? 1 : -1);
 	}
 
-	optimal_f32[0] = (x_curr_f32[0] + x_curr_f32[3]) / 2;
+//	optimal_f32[0] = Z_stance_f32[0];
+//	optimal_f32[1] = Z_stance_f32[4];
+//	optimal_f32[2] = Z_stance_f32[5];
+	optimal_f32[0] = (x_curr_f32[0]);
 	optimal_f32[1] = (x_curr_f32[1] + x_curr_f32[4]) / 2;
 	optimal_f32[2] = (x_curr_f32[2] + x_curr_f32[5]) / 2;
 
 	calculateOptimalEstimationErrorCovariance(&Ki, &Hi, &Ri);	// P(k) = (I - Ki(k)*Hi)*P-(k)
 
 	updatePreviousMatrices();	// update x_prev, P_prev, (Q_prev?) // TODO Add Q_prev to this?
-	phase_out = (float)phase;
+	phase_out = phase;
 }
 
 float returnCurrentPosition(Position* current_pos) {
@@ -660,10 +695,10 @@ float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, P
 	corr->Y = correction_f32[1];
 	corr->Z = correction_f32[2];
 
-	*pred = (Position){0,0,0};
-//	pred->X = prediction_f32[0];
-//	pred->Y = prediction_f32[1];
-//	pred->Z = prediction_f32[2];
+	//*pred = (Position){0,0,0};
+	pred->X = prediction_f32[0];
+	pred->Y = prediction_f32[1];
+	pred->Z = prediction_f32[2];
 
 	optimal_pos->X = optimal_f32[0];
 	optimal_pos->Y = optimal_f32[1];
@@ -682,14 +717,15 @@ float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, P
 	quat->Y = q_f32[2];
 	quat->Z = q_f32[3];
 
-	ZUPT->X = phase_out; // Phase mapped to X
+	ZUPT->X = (float)curr_phase; // Phase
+	ZUPT->Y = (float)phase_counter;
 
 	return w_avg_b0_mag;
 }
 
 void calculateAvgAngularRate(
 		SensorData* IMU0_data,
-		SensorData* IMU1_data) { // TODO Verify this
+		SensorData* IMU1_data) {
 
 	getNextGyroReading(IMU0_data, IMU1_data, w_avg_b0_f32);
 
@@ -713,7 +749,7 @@ void calculateRotationMatrix(
 	delta_q_f32[2] = w_avg_b0_f32[1] * q1_3_scaling_term;
 	delta_q_f32[3] = w_avg_b0_f32[2] * q1_3_scaling_term;
 
-	arm_quaternion_normalize_f32(delta_q_f32, delta_q_f32, 1);	// q = q / |q|
+	arm_quaternion_normalize_f32(delta_q_f32, delta_q_f32, 1);	// q = q / |q|a
 
 	// Calculate new normalized quaternion
 	arm_quaternion_product_single_f32(delta_q_f32, q_f32, q_f32); // q = q x delta_q
@@ -747,7 +783,7 @@ void calculateStateEstimation(void) { // TODO Verify this
 
 	arm_mat_add_f32(&temp1, &temp2, &x_curr); // x(k) = F*x(k-1) + B*u(k)
 
-	prediction_f32[0] = (x_curr_f32[0] + x_curr_f32[3]) / 2;
+	prediction_f32[0] = (x_curr_f32[0]);
 	prediction_f32[1] = (x_curr_f32[1] + x_curr_f32[4]) / 2;
 	prediction_f32[2] = (x_curr_f32[2] + x_curr_f32[5]) / 2;
 }
@@ -778,6 +814,8 @@ void calculateStateEstimationErrorCovariance(void) {
 
 }
 
+#define MAX_IMU (4*g)
+
 void calculateGainMatrix(
 		arm_matrix_instance_f32* Ki, /*(12xN)*/
 		arm_matrix_instance_f32* Hi, /*(Nx12)*/
@@ -789,46 +827,75 @@ void calculateGainMatrix(
 	 *  Define Temporary Objects
 	 */
 
-	float* temp12xN_0_f32 = (float*)malloc(12 * N * sizeof(float));
 	arm_matrix_instance_f32 temp12xN_0;
 	arm_mat_init_f32(&temp12xN_0, 12, N, temp12xN_0_f32); // temp matrix (12xN)
 	arm_mat_trans_f32(Hi, &temp12xN_0); // init to transpose of Hi
 
-	float* temp12xN_1_f32 = (float*)malloc(12 * N * sizeof(float));
 	arm_matrix_instance_f32 temp12xN_1;
 	arm_mat_init_f32(&temp12xN_1, 12, N, temp12xN_1_f32); // temp matrix (12xN)
 
-	float* tempNxN_0_f32 = (float*)malloc(N * N * sizeof(float));
 	arm_matrix_instance_f32 tempNxN_0;
 	arm_mat_init_f32(&tempNxN_0, N, N, tempNxN_0_f32); // temp matrix (NxN)
 
-	float* tempNxN_1_f32 = (float*)malloc(N * N * sizeof(float));
 	arm_matrix_instance_f32 tempNxN_1;
 	arm_mat_init_f32(&tempNxN_1, N, N, tempNxN_1_f32); // temp matrix (NxN)
+
+	arm_matrix_instance_f32 tempNxN_2;
+	arm_mat_init_f32(&tempNxN_2, N, N, tempNxN_2_f32); // temp matrix (NxN)
 
 	/*
 	 *  Calculation Section
 	 */
 
+	float IMU[3];
+	int index = ((int)xl_oldest - 1)%RING_SIZE;
+	IMU[0] = xl0_avg_x_ring[index]/MAX_IMU;
+	IMU[1] = xl0_avg_y_ring[index]/MAX_IMU;
+	IMU[2] = xl0_avg_z_ring[index]/MAX_IMU;
+
+
+	// Form Ri Scaling Matrix
+	int i;
+	for (i = 0; i < N; ++i) {
+		int j;
+		for (j = 0; j < 3; ++j) {
+			if (((N+1)*i) % N == j) {
+				tempNxN_0_f32[((N+1)*i)] = IMU[j] * dT;
+			} else {
+				tempNxN_0_f32[(i*N)+j] = 0;
+			}
+		}
+		for (j = 3; j < 6; ++j) {
+			if (((N+1)*i) % N == j) {
+				tempNxN_0_f32[((N+1)*i)] = IMU[j%3] * dT2 / 2;
+			} else {
+				tempNxN_0_f32[(i*N)+j] = 0;
+			}
+		}
+		for (j = 6; j < N; ++j) {
+			tempNxN_0_f32[(i*N)+j] = 0;
+		}
+	}
+
+	arm_mat_mult_f32(Ri, &tempNxN_0, &tempNxN_2);
+
 	arm_mat_mult_f32(&P_minus, &temp12xN_0, &temp12xN_1);	// P-(k)*Hi^T --> (12x12) * (12xN)
 
 	arm_mat_mult_f32(Hi, &temp12xN_1, &tempNxN_0);	// Hi*(P-(k)*Hi^T) --> (Nx12) * (12xN)
 
-	arm_mat_add_f32(&tempNxN_0, Ri, &tempNxN_1);	// (Hi*P-(k)*Hi^T + Ri(k))
+	arm_mat_add_f32(&tempNxN_0, &tempNxN_2, &tempNxN_1);	// (Hi*P-(k)*Hi^T + Ri(k))
 
 	arm_mat_inverse_f32(&tempNxN_1, &tempNxN_0);	// (Hi*P-(k)*Hi^T + Ri(k))^-1
 
 	arm_mat_mult_f32(&temp12xN_1, &tempNxN_0, Ki);	// Ki(k) = P-(k)*Hi^T * (Hi*P-(k)*Hi^T + Ri(k))^-1 --> (12xN) * (NxN)
 
-	/*
-	 *  Cleanup Section
-	 */
-
-	// Free malloc'd memory
-	free(temp12xN_0_f32);
-	free(tempNxN_0_f32);
-	free(temp12xN_1_f32);
-	free(tempNxN_1_f32);
+	float k_gate = 5;
+	for (i = 0; i < N*N; ++i) {
+		if (fabs(Ki->pData[i]) > k_gate || Ki->pData != Ki->pData) {
+			Ki->pData[i] = k_gate * (Ki->pData[i] > 0 ? 1 : -1);
+			diverging_flag = 1;
+		}
+	}
 
 	gain_f32[0] = (Ki->pData[0] + Ki->pData[3]) / 2;
 	gain_f32[1] = (Ki->pData[1] + Ki->pData[4]) / 2;
@@ -850,13 +917,11 @@ void calculateOptimalStateEstimation(
 	 *  Define Temporary Objects
 	 */
 
-	float* tempNx1_0_f32 = (float*)malloc(N * sizeof(float));
 	arm_matrix_instance_f32 tempNx1_0;
-	arm_mat_init_f32(&tempNx1_0, N, 1, tempNx1_0_f32); // Will temporarily store some operation results, (Nx1)
+	arm_mat_init_f32(&tempNx1_0, N, 1, temp12x1_0_f32); // Will temporarily store some operation results, (Nx1)
 
-	float* tempNx1_1_f32 = (float*)malloc(N * sizeof(float));
 	arm_matrix_instance_f32 tempNx1_1;
-	arm_mat_init_f32(&tempNx1_1, N, 1, tempNx1_1_f32); // Will temporarily store some operation results, (Nx1)
+	arm_mat_init_f32(&tempNx1_1, N, 1, temp12x1_1_f32); // Will temporarily store some operation results, (Nx1)
 
 	float temp12x1_f32[12];
 	arm_matrix_instance_f32 temp12x1;
@@ -872,11 +937,15 @@ void calculateOptimalStateEstimation(
 	arm_mat_sub_f32(Zi, &tempNx1_0, &tempNx1_1);	// (Zi(k) - Hi*x(k)) -> tempNx1
 //	printf("%f %f %f\n", tempNx1_f32[3], tempNx1_f32[4], tempNx1_f32[5]); // should be ideally zero
 
+
+	correction_f32[0] = (temp12x1_1_f32[0]); // Z - Hx
 	// Weight correction factor by Kalman Gain
 	arm_mat_mult_f32(Ki, &tempNx1_1, &temp12x1); // Ki(k) * (Zi(k) - Hi*x(k)) --> (12xN) * (Nx1) -> temp12x1
 
-	correction_f32[0] = (temp12x1_f32[0] + temp12x1_f32[3]) / 2;
-	correction_f32[1] = (temp12x1_f32[1] + temp12x1_f32[4]) / 2;
+	correction_f32[1] = (temp12x1_f32[0]); // K(Z - Hx)
+
+	//correction_f32[0] = (temp12x1_f32[0] + temp12x1_f32[3]) / 2;
+	//correction_f32[1] = (temp12x1_f32[1] + temp12x1_f32[4]) / 2;
 	correction_f32[2] = (temp12x1_f32[2] + temp12x1_f32[5]) / 2;
 
 //	printf("X_curr_before: %f \n", (x_curr_f32[0] + x_curr_f32[3]) / 2);
@@ -888,13 +957,6 @@ void calculateOptimalStateEstimation(
 //	printf("X_curr_after: %f \n", (x_curr_f32[0] + x_curr_f32[3]) / 2);
 //	printf("~~~~~~~~~\n");
 
-	/*
-	 *  Cleanup Section
-	 */
-
-	// Free malloc'd memory
-	free(tempNx1_0_f32);
-	free(tempNx1_1_f32);
 }
 
 void calculateOptimalEstimationErrorCovariance(
@@ -908,12 +970,10 @@ void calculateOptimalEstimationErrorCovariance(
 	 *  Define Temporary Objects
 	 */
 
-	float* tempNx12_0_f32 = (float*)malloc(12 * N * sizeof(float));
 	arm_matrix_instance_f32 tempNx12_0;
 	arm_mat_init_f32(&tempNx12_0, N, 12, tempNx12_0_f32); // temp matrix (Nx12)
 	arm_mat_trans_f32(Ki, &tempNx12_0); // init to transpose of Ki
 
-	float* temp12xN_0_f32 = (float*)malloc(12 * N * sizeof(float));
 	arm_matrix_instance_f32 temp12xN_0;
 	arm_mat_init_f32(&temp12xN_0, 12, N, temp12xN_0_f32); // temp matrix (12xN)
 
@@ -955,33 +1015,40 @@ void calculateOptimalEstimationErrorCovariance(
 	 *  Calculation Section
 	 */
 
+	// Check for divergence
+	float rst_constant = 1;
+	if (diverging_flag) {
+		int i;
+		int j;
+		for (i = 0; i < P_curr.numRows; ++i) {
+			for (j = 0; j < P_curr.numCols; ++j) {
+				P_curr.pData[(i*P_curr.numCols) + j] = P_init_f32[(i*P_curr.numCols) + j] * rst_constant;
+			}
+		}
+		diverging_flag = 0;
+		return;
+	}
+
 	arm_mat_mult_f32(Ki, Hi, &temp12x12_0);	// Ki(k)*Hi --> (12xN) * (Nx12)
 
-	arm_mat_sub_f32(&Identity12x12, &temp12x12_0, &temp12x12_0); // I - (Ki(k)*Hi)
+	arm_mat_sub_f32(&Identity12x12, &temp12x12_0, &temp12x12_1); // I - (Ki(k)*Hi)
 
-	arm_mat_trans_f32(&temp12x12_0, &temp12x12_1); 	// I - (Ki(k)*Hi)^T
+	arm_mat_trans_f32(&temp12x12_1, &temp12x12_0); 	// (I - (Ki(k)*Hi)^T
 
-	arm_mat_mult_f32(&temp12x12_0, &P_minus, &temp12x12_2);	// (I - Ki(k)*Hi)*P-(k) --> (12x12) * (12x12)
+	arm_mat_mult_f32(&temp12x12_1, &P_minus, &temp12x12_2);	// (I - Ki(k)*Hi)*P-(k) --> (12x12) * (12x12)
 
-	arm_mat_mult_f32(&temp12x12_2, &temp12x12_1, &temp12x12_0);	// (I - Ki(k)*Hi)*P-(k)*(I - (Ki(k)*Hi)^T
+	arm_mat_mult_f32(&temp12x12_2, &temp12x12_0, &temp12x12_1);	// (I - Ki(k)*Hi)*P-(k)*(I - (Ki(k)*Hi)^T
 
 	arm_mat_mult_f32(Ki, Ri, &temp12xN_0);	// Ki(k)*Ri --> (12xN) * (NxN)
 
-	arm_mat_mult_f32(&temp12xN_0, &tempNx12_0, &temp12x12_1);	// Ki(k)*Ri*Ki(k)^T --> (12xN) * (Nx12)
+	arm_mat_mult_f32(&temp12xN_0, &tempNx12_0, &temp12x12_0);	// Ki(k)*Ri*Ki(k)^T --> (12xN) * (Nx12)
 
-	arm_mat_add_f32(&temp12x12_0, &temp12x12_1, &P_curr);	// P(k) = (I - Ki(k)*Hi)*P-(k)*(I - (Ki(k)*Hi)^T + Ki(k)*Ri*Ki(k)^T
-
-	/*
-	 *  Cleanup Section
-	 */
-
-	free(temp12xN_0_f32);
-	free(tempNx12_0_f32);
+	arm_mat_add_f32(&temp12x12_1, &temp12x12_0, &P_curr);	// P(k) = (I - Ki(k)*Hi)*P-(k)*(I - (Ki(k)*Hi)^T + Ki(k)*Ri*Ki(k)^T
 
 }
 
 void updateFMatrix(
-		float timeDelta) { // TODO Verify this
+		float timeDelta) {
 
 	int i;
 	for(i = 0; i < 6; ++i) { // Update specific indices of F matrix
@@ -1006,17 +1073,19 @@ void updateBMatrix(
 
 void updateUVector(
 		SensorData* IMU0_data,
-		SensorData* IMU1_data) { // TODO Verify this
+		SensorData* IMU1_data) {
 
 	/*
 	 *  Define Temporary Objects
 	 */
 
-	float temp0_f32[3] = {IMU0_data->XL_X, IMU0_data->XL_Y, IMU0_data->XL_Z}; // Init with IMU0 acceleration
+	getNextXLReading(IMU0_data, IMU1_data, xl_b0_f32, xl_b1_f32);
+
+	float temp0_f32[3] = {xl_b0_f32[0], xl_b0_f32[1], xl_b0_f32[2]}; // Init with IMU0 acceleration
 	arm_matrix_instance_f32 temp0;
 	arm_mat_init_f32(&temp0, 3, 1, temp0_f32); // temp for IMU0 vector
 
-	float temp1_f32[3] = {IMU1_data->XL_X, IMU1_data->XL_Y, IMU1_data->XL_Z}; // Init with IMU1 acceleration
+	float temp1_f32[3] = {xl_b1_f32[0], xl_b1_f32[1], xl_b1_f32[2]}; // Init with IMU1 acceleration
 	arm_matrix_instance_f32 temp1;
 	arm_mat_init_f32(&temp1, 3, 1, temp1_f32); // temp for IMU1 vector
 
@@ -1058,17 +1127,14 @@ void updateUVector(
 	 */
 
 	// Fill u input vector with IMU0 data
-
-	getNextXLReading(IMU0_data, IMU1_data, xl_b0_f32, xl_b1_f32);
-
-	u_curr_f32[0] = xl_b0_f32[0];
-	u_curr_f32[1] = xl_b0_f32[1];
-	u_curr_f32[2] = xl_b0_f32[2];
+	u_curr_f32[0] = temp0_f32[0];
+	u_curr_f32[1] = temp0_f32[1];
+	u_curr_f32[2] = temp0_f32[2];
 
 	// Fill u input vector with IMU1 data
-	u_curr_f32[3] = xl_b1_f32[0];
-	u_curr_f32[4] = xl_b1_f32[1];
-	u_curr_f32[5] = xl_b1_f32[2];
+	u_curr_f32[3] = temp1_f32[0];
+	u_curr_f32[4] = temp1_f32[1];
+	u_curr_f32[5] = temp1_f32[2];
 }
 
 void updateZiVector(
@@ -1113,7 +1179,7 @@ void updateZiVector(
 	Zi->pData[2] = tempRw_f32[2];
 }
 
-void updatePreviousMatrices(void) { // TODO Verify this
+void updatePreviousMatrices(void) {
 	int i;
 	int j;
 	for (i = 0; i < x_curr.numRows; ++i) {
@@ -1125,12 +1191,10 @@ void updatePreviousMatrices(void) { // TODO Verify this
 			P_prev.pData[(i*P_prev.numCols) + j] = P_curr.pData[(i*P_curr.numCols) + j];
 		}
 	}
-
-	// TODO Update Q(k-1) somehow
 }
 
 float dot_f32(float* a, float* b) {
-	return (a[0]+b[0]) + (a[1]+b[1]) + (a[2]+b[2]);
+	return (a[0]*b[0]) + (a[1]*b[1]) + (a[2]*b[2]);
 }
 
 void cross_f32(float* a, float* b, float* c) {
@@ -1148,7 +1212,7 @@ float vec_mag_f32(float* vec) {
 void cross_product(
 		arm_matrix_instance_f32* a,
 		arm_matrix_instance_f32* b,
-		arm_matrix_instance_f32* c) { // TODO Verify this
+		arm_matrix_instance_f32* c) {
 
 	// Make copy to avoid using overwritten data in calculations (ex. if a = c)
 	float aData[3] = {a->pData[0], a->pData[1], a->pData[2]};
@@ -1157,18 +1221,23 @@ void cross_product(
 	cross_f32(aData, bData, c->pData);
 }
 
-void initRingBuffers(void) {
+void initRingBuffers(SensorData* IMU0_data, SensorData* IMU1_data) {
+	float w_avg_tmp[3];
+	w_avg_tmp[0] = (IMU0_data->G_X + IMU1_data->G_X) / 2;
+	w_avg_tmp[1] = (IMU0_data->G_Y + IMU1_data->G_Y) / 2;
+	w_avg_tmp[2] = (IMU0_data->G_Z + IMU1_data->G_Z) / 2;
+
 	int i;
 	for(i = 0; i < RING_SIZE; ++i) {
-		w_avg_x_ring[i] = 0;
-		w_avg_y_ring[i] = 0;
-		w_avg_z_ring[i] = 0;
-		xl0_avg_x_ring[i] = 0;
-		xl0_avg_y_ring[i] = 0;
-		xl0_avg_z_ring[i] = 0;
-		xl1_avg_x_ring[i] = 0;
-		xl1_avg_y_ring[i] = 0;
-		xl1_avg_z_ring[i] = 0;
+		w_avg_x_ring[i] = w_avg_tmp[0];
+		w_avg_y_ring[i] = w_avg_tmp[1];
+		w_avg_z_ring[i] = w_avg_tmp[2];
+		xl0_avg_x_ring[i] = IMU0_data->XL_X;
+		xl0_avg_y_ring[i] = IMU0_data->XL_Y;
+		xl0_avg_z_ring[i] = IMU0_data->XL_Z;
+		xl1_avg_x_ring[i] = IMU1_data->XL_X;
+		xl1_avg_y_ring[i] = IMU1_data->XL_Y;
+		xl1_avg_z_ring[i] = IMU1_data->XL_Z;
 	}
 }
 

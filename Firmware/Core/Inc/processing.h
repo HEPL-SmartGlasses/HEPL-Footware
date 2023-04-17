@@ -34,13 +34,13 @@ enum PHASE {SWING, STANCE};
 #define g (float)9.80274 			 	// Local acceleration due to gravity: Ann Arbor = 9.80274
 #define deg2rad (float) 0.0174532925199 // pi / 180
 
-#define RING_SIZE 8
+#define RING_SIZE 5
 
 // ZUPT
 #define ZUPT_W 20										// Angular Rate Energy Detector Window Size (# of samples)
 #define G_VARIANCE_SQ (float)0.01*0.01					// sigma_w^2
 #define ZUPT_SCALE_FACTOR 1.0/(G_VARIANCE_SQ * ZUPT_W)	// 1/(sigma_w^2 * W)
-#define ZUPT_THRESHOLD (float)17000						// Y' //TODO determine this better
+#define ZUPT_THRESHOLD (float)80000						// Y' //TODO determine this better
 #define PHASE_INTERVAL_THRESHOLD 10					// Double threshold
 
 /*
@@ -205,7 +205,7 @@ void cross_product(
 /*
  *  Creates ring buffers for gyro x, y, z
  */
-void initRingBuffers(void);
+void initRingBuffers(SensorData* IMU0_data, SensorData* IMU1_data);
 
 /*
  *  Initialize quaternion based on initial IMU acceleration
@@ -231,10 +231,6 @@ void initZUPT(void);
  *  Frees memory associated with ZUPT linked list
  */
 void clearZUPT(void);
-
-// Saturating interval counter
-static enum PHASE curr_phase = STANCE;
-static uint8_t phase_counter = 0; // 0 --> stance side, PHASE_INTERVAL_THRESHOLD --> swing side
 
 /*
  *  ZUPT phase detection function

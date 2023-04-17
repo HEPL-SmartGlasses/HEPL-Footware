@@ -36,7 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TX_DATA_BUF_SZ 9
+#define TX_DATA_BUF_SZ 16
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -69,12 +69,14 @@ volatile uint8_t DRDY_flag = 0;
 
 volatile uint8_t periodic_tx_flag = 1;
 
+volatile uint8_t new_data_flag = 0;
+
 enum STATE {
 		RESET_STATE,
 		RUN_STATE
 };
 
-volatile float timeDelta = 1.0F/104; // Default to 1/104Hz (IMU sample rate)
+volatile float timeDelta = 1 * 1.0F/50; // Default to 1/52Hz (IMU sample rate)
 
 /* USER CODE END PV */
 
@@ -91,28 +93,65 @@ static void MX_TIM2_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+// Needs ~0.5s delay when switching b/w XBees for some reason
+#define CTR_MOD 2
+
 uint8_t sendCurrentPosition(uint8_t state) {
-	Position pos;
+	static int ctr = 0;
 
-	returnCurrentPosition(&pos);
+//	Position pos;
+//
+//	returnCurrentPosition(&pos);
 
-	uint32_t posX = *(int*)&pos.X;
-	uint32_t posY = *(int*)&pos.Y;
+	Position corr;
+	Position pred;
+	Position opt;
+	Position K_gain;
+	Position w_avg;
+	Quaternion quat;
+	Position ZUPT;
 
-	uint8_t data_buf[TX_DATA_BUF_SZ];
+	returnDebugOutput(&corr, &pred, &opt, &K_gain, &w_avg, &quat, &ZUPT);
+
+//	uint32_t posX = *(int*)&pos.X;
+//	uint32_t posY = *(int*)&pos.Y;
+
+	uint32_t IMUX = *(int*)&pred.X; // x_est
+	uint32_t IMUY = *(int*)&corr.X; // Hx
+	uint32_t IMUZ = *(int*)&corr.Y; // Z - Hx
+
+	//Position tmp = {(float)ZUPT, 0,0};
+
+	float K_mag = (float)sqrt(K_gain.X*K_gain.X+K_gain.Y*K_gain.Y+K_gain.Z*K_gain.Z);
+	uint32_t quatW = *(int*)&opt.X; // x_opt
+
+	uint8_t data_buf[16];
 
 	int i;
 	for (i = 0; i < 3; ++i) {
-	  data_buf[i] = (posX >> (3-i)*8) & 0xFF;
+	  data_buf[i] = (IMUX >> (3-i)*8) & 0xFF;
 	}
 	for (i = 0; i < 3; ++i) {
-	  data_buf[i+4] = (posY >> (3-i)*8) & 0xFF;
+	  data_buf[i+4] = (IMUY >> (3-i)*8) & 0xFF;
 	}
-	data_buf[8] = state;
+	for (i = 0; i < 3; ++i) {
+	  data_buf[i+8] = (IMUZ >> (3-i)*8) & 0xFF;
+	}
+	for (i = 0; i < 3; ++i) {
+	  data_buf[i+12] = (quatW >> (3-i)*8) & 0xFF;
+	}
+
+	//data_buf[8] = state;
 
 	uint8_t xbee_rx_buf[32];
 
-	XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ);
+	if (ctr == 0) {
+		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, COMPUTER_ADDR);
+	} /*else if (ctr == CTR_MOD/2){
+		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, GLASSBEE_ADDR);
+	}*/
+
+	ctr = (ctr + 1) % CTR_MOD;
 
 	return xbee_rx_buf[0];
 }
@@ -163,7 +202,12 @@ int main(void)
   IMU_init(&hspi1, &IMU1, 1);
   IMU_init(&hspi1, &IMU2, 2);
 
-  HAL_Delay(100);
+  HAL_Delay(500);
+
+  IMU_readSensorData(&IMU0, &IMU0_data);
+  IMU_readSensorData(&IMU1, &IMU1_data);
+
+  HAL_Delay(500);
 
   IMU_readSensorData(&IMU0, &IMU0_data);
   IMU_readSensorData(&IMU1, &IMU1_data);
@@ -179,7 +223,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if (DRDY_flag) {
+	  if (DRDY_flag || periodic_tx_flag) {
 
 		  // Sample IMU Data
 		  IMU_readSensorData(&IMU0, &IMU0_data);
@@ -189,13 +233,16 @@ int main(void)
 		  calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
 
 		  DRDY_flag = 0;
+
+		  new_data_flag = 1;
 	  }
 
-	  if (periodic_tx_flag) {
+	  if (periodic_tx_flag && new_data_flag) {
 
-		  uint8_t rx_cmd = sendCurrentPosition(RUN_STATE);
+		  uint8_t rx_byte1 = sendCurrentPosition(RUN_STATE);
 
-		  if (rx_cmd == 0xAA) {
+		  //TODO get a reset command
+	/*	  if (rx_byte1 == 0xAA) {
 			  // Reset command from glasses board
 
 			  IMU_readSensorData(&IMU0, &IMU0_data);
@@ -204,8 +251,9 @@ int main(void)
 			  resetCurrentPosition(&IMU0_data, &IMU1_data);
 
 			  sendCurrentPosition(RESET_STATE);
-		  }
+		  }*/
 		  periodic_tx_flag = 0;
+		  new_data_flag = 0;
 	  }
   }
   /* USER CODE END 3 */
@@ -357,7 +405,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 7999;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 200;
+  htim2.Init.Period = 40;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)

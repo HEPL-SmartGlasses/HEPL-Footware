@@ -7,17 +7,17 @@
 
 #include "XBee.h"
 
-void XBeeTransmitReceive(uint8_t* data_buf, uint8_t* xbee_rx_buf, uint8_t tx_data_size) {
+void XBeeTransmitReceive(uint8_t* data_buf, uint8_t* xbee_rx_buf, uint8_t tx_data_size, uint64_t dest_addr) {
 	uint8_t xbee_tx_buf[32];
 
-	uint8_t tx_size = makeXBeeFrame(XBEE_TRANSMIT_FRAME, 0x01, tx_data_size, data_buf, xbee_tx_buf);
+	uint8_t tx_size = makeXBeeFrame(XBEE_TRANSMIT_FRAME, 0x01, tx_data_size, data_buf, xbee_tx_buf, dest_addr);
 
 	// Set CS
 	HAL_GPIO_WritePin(XBEE_CS_PORT, XBEE_CS_PIN, 0);
 
 	__disable_irq();
 
-	HAL_SPI_TransmitReceive(&XBEE_SPI, xbee_tx_buf, xbee_rx_buf, tx_size, 10);
+	HAL_SPI_TransmitReceive(&XBEE_SPI, xbee_tx_buf, xbee_rx_buf, tx_size, 7);
 
 	__enable_irq();
 
@@ -47,10 +47,11 @@ uint8_t makeXBeeFrame(
 			uint8_t frame_id,
 			uint8_t data_size, // in bytes
 			uint8_t data[],
-			uint8_t frame[]
+			uint8_t frame[],
+			uint64_t dest_addr
 ){
-	// only do 14 bytes of data to avoid exceeding 32-byte frame size
-	if (data_size > 14) { data_size = 14; }
+	// only do 14 bytes of data to avoid exceeding x-byte frame size
+	if (data_size > 20) { data_size = 20; }
 
 	uint16_t frame_size = 0x0E + data_size;
 	uint32_t checksum = 0;
@@ -62,7 +63,7 @@ uint8_t makeXBeeFrame(
 	frame[4] = frame_id;
 	for (int i = 0; i < 8; i++) // write 64-bit dest
 	{
-		uint8_t temp = (XBEE_DEST_ADDR >> 8*(7-i));
+		uint8_t temp = (dest_addr >> 8*(7-i));
 		frame[i + 5] = temp;
 	}
 	frame[13] = 0xFF; // 16-bit addr upper

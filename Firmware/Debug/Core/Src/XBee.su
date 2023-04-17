@@ -1,4 +1,4 @@
 ../Core/Src/XBee.c:31:9:XBeeChecksum	0	static
 ../Core/Src/XBee.c:45:9:makeXBeeFrame	24	static
-../Core/Src/XBee.c:10:6:XBeeTransmitReceive	64	static,ignoring_inline_asm
-../Core/Src/XBee.c:84:6:parseXBeeFrame	0	static
+../Core/Src/XBee.c:10:6:XBeeTransmitReceive	72	static,ignoring_inline_asm
+../Core/Src/XBee.c:85:6:parseXBeeFrame	0	static
