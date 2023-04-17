@@ -24,7 +24,7 @@
 
 #include "IMU.h"
 #include "stm32l4xx_hal.h"
-#include "processing.h"
+#include "compProcessing.h"
 #include "XBee.h"
 
 /* USER CODE END Includes */
@@ -71,6 +71,8 @@ volatile uint8_t periodic_tx_flag = 1;
 
 volatile uint8_t new_data_flag = 0;
 
+const uint8_t IS_COMP_FILTER = 1;
+
 enum STATE {
 		RESET_STATE,
 		RUN_STATE
@@ -111,7 +113,7 @@ uint8_t sendCurrentPosition(uint8_t state) {
 	Quaternion quat;
 	Position ZUPT;
 
-	returnDebugOutput(&corr, &pred, &opt, &K_gain, &w_avg, &quat, &ZUPT);
+	returnCompDebugOutput(&corr, &pred, &opt, &K_gain, &w_avg, &quat, &ZUPT);
 
 //	uint32_t posX = *(int*)&pos.X;
 //	uint32_t posY = *(int*)&pos.Y;
@@ -212,7 +214,7 @@ int main(void)
   IMU_readSensorData(&IMU0, &IMU0_data);
   IMU_readSensorData(&IMU1, &IMU1_data);
 
-  init_processing(&IMU0_data, &IMU1_data);
+  init_comp_processing(&IMU0_data, &IMU1_data);
 
   /* USER CODE END 2 */
 
@@ -230,7 +232,7 @@ int main(void)
 		  IMU_readSensorData(&IMU1, &IMU1_data);
 		  //IMU_readSensorData(&IMU2, &IMU2_data);
 
-		  calculateCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
+		  calculateCompCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
 
 		  DRDY_flag = 0;
 

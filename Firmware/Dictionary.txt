@@ -29,3 +29,8 @@ exp
 cos
 sqrt
 conjugation
+quat
+qw
+qx
+qy
+yaw

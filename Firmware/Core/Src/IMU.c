@@ -7,6 +7,8 @@
 
 #include "IMU.h"
 
+extern const uint8_t IS_COMP_FILTER;
+
 float IMU_offsets[9] = {
 		-0.2,0,0.3,
 		0,0,0.2373,
@@ -31,6 +33,7 @@ void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU, uint8_t chipID) {
 
 	uint8_t buf[BUFFER_SIZE]; // Generic buffer for tx/rx
 
+
 	// Set to 4-wire
 	buf[0] = CTRL3_C;
 	buf[1] = 0x04;
@@ -40,33 +43,68 @@ void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU, uint8_t chipID) {
 	IMU_readRegister(IMU, WHO_AM_I, buf, 1);
 	assert(buf[0] == WHO_I_AM_ID); // Crash if not connected properly
 
-	/*
-	 *  Startup Sequence
-	 */
-	buf[0] = CTRL1_XL;
-	buf[1] = 0x4C;
-	IMU_writeRegister(IMU, buf, 1);
+	if (IS_COMP_FILTER) { // Complementary Filter Setup
 
-	buf[0] = CTRL2_G;
-	buf[1] = 0x38;
-	IMU_writeRegister(IMU, buf, 1);
+		/*
+		 *  Startup Sequence
+		 */
+		buf[0] = CTRL1_XL;
+		buf[1] = 0x3E;
+		IMU_writeRegister(IMU, buf, 1);
 
-	buf[0] = INT2_CTRL;
-	buf[1] = 0x03;
-	IMU_writeRegister(IMU, buf, 1);
+		buf[0] = CTRL2_G;
+		buf[1] = 0x38;
+		IMU_writeRegister(IMU, buf, 1);
 
-	buf[0] = CTRL5_C;
-	buf[1] = 0x60;
-	IMU_writeRegister(IMU, buf, 1);
+		buf[0] = INT2_CTRL;
+		buf[1] = 0x03;
+		IMU_writeRegister(IMU, buf, 1);
 
-	buf[0] = CTRL6_C;
-	buf[1] = 0x04;
-	IMU_writeRegister(IMU, buf, 1);
+		buf[0] = CTRL5_C;
+		buf[1] = 0x60;
+		IMU_writeRegister(IMU, buf, 1);
 
-	buf[0] = CTRL7_G;
-	buf[1] = 0x00;
-	IMU_writeRegister(IMU, buf, 1);
+		buf[0] = CTRL6_C;
+		buf[1] = 0x04;
+		IMU_writeRegister(IMU, buf, 1);
 
+		buf[0] = CTRL7_G;
+		buf[1] = 0x40;
+		IMU_writeRegister(IMU, buf, 1);
+
+		buf[0] = CTRL8_XL;
+		buf[1] = 0x00;
+		IMU_writeRegister(IMU, buf, 1);
+
+	} else { // Kalman Filter Setup
+
+		/*
+		 *  Startup Sequence
+		 */
+		buf[0] = CTRL1_XL;
+		buf[1] = 0x3C;
+		IMU_writeRegister(IMU, buf, 1);
+
+		buf[0] = CTRL2_G;
+		buf[1] = 0x38;
+		IMU_writeRegister(IMU, buf, 1);
+
+		buf[0] = INT2_CTRL;
+		buf[1] = 0x03;
+		IMU_writeRegister(IMU, buf, 1);
+
+		buf[0] = CTRL5_C;
+		buf[1] = 0x60;
+		IMU_writeRegister(IMU, buf, 1);
+
+		buf[0] = CTRL6_C;
+		buf[1] = 0x04;
+		IMU_writeRegister(IMU, buf, 1);
+
+		buf[0] = CTRL7_G;
+		buf[1] = 0x00;
+		IMU_writeRegister(IMU, buf, 1);
+	}
 }
 
 float IMU_convertAccel(uint8_t H_byte, uint8_t L_byte) {
