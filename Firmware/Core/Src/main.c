@@ -142,9 +142,10 @@ uint8_t sendCurrentPosition(uint8_t state) {
 
 	if (ctr == 0) {
 		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, glass);
-	} else if (ctr == CTR_MOD/2){
 		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, comp);
-	}
+	} //else if (ctr == CTR_MOD/2){
+		//XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, comp);
+	//}
 
 	ctr = (ctr + 1) % CTR_MOD;
 
