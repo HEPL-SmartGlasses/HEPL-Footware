@@ -249,6 +249,7 @@ void EXTI9_5_IRQHandler(void)
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
 
   /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(SPI3_ATTN_Pin);
   HAL_GPIO_EXTI_IRQHandler(IMU2_INT1_Pin);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
   DRDY_flag = 1;

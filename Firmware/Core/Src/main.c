@@ -60,8 +60,6 @@ SensorData IMU0_data;
 SensorData IMU1_data;
 SensorData IMU2_data;
 
-const GPIO_TypeDef* XBEE_CS_PORT = GPIOA;
-const int XBEE_CS_PIN = (int) GPIO_PIN_15;
 
 volatile uint8_t DRDY_flag = 0;
 
@@ -99,6 +97,9 @@ static void MX_TIM2_Init(void);
 #define CTR_MOD 50
 #define comp 1
 #define glass 0
+uint8_t xbee_rx_buf[64];
+uint16_t rx_size;
+
 
 uint8_t sendCurrentPosition(uint8_t state) {
 	static int ctr = 0;
@@ -110,6 +111,7 @@ uint8_t sendCurrentPosition(uint8_t state) {
 	Position pos;
 
 	float heading = returnCurrentPosition(&pos);
+	uint32_t head = *(int*)&heading; // x_opt
 
 //	uint32_t posX = *(int*)&pos.X;
 //	uint32_t posY = *(int*)&pos.Y;
@@ -118,8 +120,6 @@ uint8_t sendCurrentPosition(uint8_t state) {
 	uint32_t POSY = *(int*)&pos.Y;
 
 	//Position tmp = {(float)ZUPT, 0,0};
-
-	uint32_t head = *(int*)&heading; // x_opt
 
 	uint8_t data_buf[12];
 
@@ -136,13 +136,13 @@ uint8_t sendCurrentPosition(uint8_t state) {
 
 	//data_buf[8] = state;
 
-	uint8_t xbee_rx_buf[32];
+
 
 
 
 	if (ctr == 0) {
-		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, glass);
-		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, comp);
+		//XBeeTX(data_buf, TX_DATA_BUF_SZ,xbee_rx_buf, glass);
+		XBeeTX(data_buf, TX_DATA_BUF_SZ,xbee_rx_buf, comp);
 	} //else if (ctr == CTR_MOD/2){
 		//XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, comp);
 	//}
@@ -507,7 +507,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : SPI3_ATTN_Pin */
   GPIO_InitStruct.Pin = SPI3_ATTN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SPI3_ATTN_GPIO_Port, &GPIO_InitStruct);
 
@@ -537,6 +537,43 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void parseXbeeData(){
+
+	int i = 0;
+	while (xbee_rx_buf[i] != 0x7e) {
+			i++;
+	}
+
+	/*//int frame_size = xbee_rx_buf[i + 2];
+	int frame = xbee_rx_buf[i + 3];
+	if (frame != 0x90){
+		return;
+	}
+
+	if (frame[i + 15] == 82 && frame[i + 16] == 83 && frame[i + 17])
+	{
+		 resetCurrentPosition(&IMU0_data, &IMU1_data, &IMU2_data);
+	}*/
+
+}
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if (GPIO_Pin == SPI3_ATTN_Pin)
+	{
+		rx_size = 0;
+		while (!HAL_GPIO_ReadPin(SPI3_ATTN_GPIO_Port, SPI3_ATTN_Pin))
+		{
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
+			HAL_SPI_Receive(&hspi3, &xbee_rx_buf[rx_size], 1, 2);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 1);
+			rx_size = (rx_size + 1) % 64;
+		}
+		parseXbeeData();
+	}
+}
 
 /* USER CODE END 4 */
 

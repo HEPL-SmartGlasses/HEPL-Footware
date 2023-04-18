@@ -92,6 +92,7 @@ void Error_Handler(void);
 #define XBEE_CS_GPIO_Port GPIOA
 #define SPI3_ATTN_Pin GPIO_PIN_7
 #define SPI3_ATTN_GPIO_Port GPIOB
+#define SPI3_ATTN_EXTI_IRQn EXTI9_5_IRQn
 
 /* USER CODE BEGIN Private defines */
 

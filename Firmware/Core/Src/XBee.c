@@ -33,7 +33,7 @@ extern SPI_HandleTypeDef hspi3;
 #define XBEE_CS_PORT GPIOA
 #define XBEE_CS_PIN GPIO_PIN_15
 #define XBEE_ATTN_PORT GPIOB
-#define XBEE_ATTN_PIN GPIO_PIN_6
+#define XBEE_ATTN_PIN GPIO_PIN_7
 #define XBEE_SRC_ADDR FOOTBEE_ADDR
 #define XBEE_DEST_ADDR GLASSBEE_ADDR
 extern SPI_HandleTypeDef hspi3;
@@ -41,29 +41,23 @@ extern SPI_HandleTypeDef hspi3;
 #endif
 
 // externs
-extern uint8_t xbee_rx_buf[32];
+extern uint8_t xbee_rx_buf[64];
 extern uint16_t rx_size;
 
-uint8_t XBeeTransmitReceive(uint8_t* data_buf, uint8_t* xbee_rx_buf, uint8_t tx_data_size, uint8_t comp) {
-	uint8_t xbee_tx_buf[32];
-
-	uint8_t tx_size = makeXBeeTXFrame(XBEE_TRANSMIT_FRAME, 0x01, data_buf, tx_data_size, xbee_tx_buf, comp);
-
-	// Set CS
-	HAL_GPIO_WritePin(XBEE_CS_PORT, XBEE_CS_PIN, 0);
-
-	__disable_irq();
-
-	HAL_StatusTypeDef stat = HAL_SPI_TransmitReceive(XBEE_SPI_HANDLER, xbee_tx_buf, xbee_rx_buf, tx_size, 7);
-
-	__enable_irq();
-
-	// Clear CS
-	HAL_GPIO_WritePin(XBEE_CS_PORT, XBEE_CS_PIN, 1);
+uint8_t XBeeTX(uint8_t data[], uint8_t data_size,uint8_t rx_buf[], uint8_t comp){
+	uint8_t frame[64];
+	uint8_t frame_size = makeXBeeTXFrame(XBEE_TRANSMIT_FRAME, 0x01, data, data_size, frame, comp);
+	HAL_GPIO_TogglePin(XBEE_CS_PORT, XBEE_CS_PIN);
+	HAL_StatusTypeDef stat = HAL_SPI_TransmitReceive(XBEE_SPI_HANDLER, frame, rx_buf, frame_size, 7);
+	HAL_GPIO_TogglePin(XBEE_CS_PORT, XBEE_CS_PIN);
 
 	if (stat == HAL_OK) return 1;
 	return 0;
 }
+
+
+
+
 
 // Calculates a checksum for a given XBee frame
 uint8_t XBeeChecksum(uint8_t frame[], uint8_t frame_size)
@@ -84,16 +78,7 @@ uint8_t XBeeChecksum(uint8_t frame[], uint8_t frame_size)
 // makeXBeeTXFrame(): Generates an XBee TX frame with the given data payload
 // 	 Returns frame size
 // 	 Modifies frame[]
-uint8_t makeXBeeTXFrame
-(
-		uint8_t frame_type,
-		uint8_t frame_id,
-		uint8_t data[],
-		uint8_t data_size, // in bytes
-		uint8_t frame[],
-		uint8_t comp
-)
-{
+uint8_t makeXBeeTXFrame(uint8_t frame_type,uint8_t frame_id,uint8_t data[],uint8_t data_size, uint8_t frame[],uint8_t comp){
 	// only do 14 bytes of data to avoid exceeding 32-byte frame size
 	if (data_size > 16) { data_size = 16; }
 
