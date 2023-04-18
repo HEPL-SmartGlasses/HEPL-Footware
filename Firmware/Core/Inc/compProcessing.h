@@ -72,6 +72,8 @@ void calculateStateEstimation(void);
 
 void initQuaternions(SensorData* IMU0_data, SensorData* IMU1_data);
 
+void calculateAvgAngularRate(IMU0_data, IMU1_data);
+
 float returnCurrentPosition(Position* current_pos);
 
 float returnDebugOutput(Position* corr, Position* pred, Position* optimal_pos, Position* K_gain, Position* w_avg, Quaternion* quat, Position* ZUPT);

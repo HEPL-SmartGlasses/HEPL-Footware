@@ -15,10 +15,10 @@ float IMU_offsets[9] = {
 		0,0,0,
 };
 float IMU_Goffsets[9] = {
-		0.33,-1.25,0.8,
-		0.870038545,-1.6,-0.53,
-		0,0,0,
-		//0,0,0,0,0,0,0,0,0,
+//		0.33,-1.25,0.8,
+//		0.870038545,-1.6,-0.53,
+//		0,0,0,
+		0,0,0,0,0,0,0,0,0,
 };
 
 void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU, uint8_t chipID) {
@@ -69,7 +69,7 @@ void IMU_init(SPI_HandleTypeDef* hspi, IMU* IMU, uint8_t chipID) {
 		IMU_writeRegister(IMU, buf, 1);
 
 		buf[0] = CTRL7_G;
-		buf[1] = 0x40;
+		buf[1] = 0x70;
 		IMU_writeRegister(IMU, buf, 1);
 
 		buf[0] = CTRL8_XL;

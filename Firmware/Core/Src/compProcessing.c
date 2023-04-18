@@ -308,7 +308,7 @@ void calculateCompCorrectedState(SensorData* IMU0_data, SensorData* IMU1_data, f
 
 	phase = detectZUPTPhase();
 
-	float alpha = 0.99;
+	float alpha = 0.9;
 	quatSLERP(q_accel_f32, q_gyro_f32, q_true_f32, alpha); // Weighted interpolation between qX, qG --> qT
 
 	calculateStateEstimation();	// x(k) = F*x(k-1) + B*u(k)
@@ -360,10 +360,10 @@ void euler_to_quaternion(float* XL_angles, float* quat) {
 
 	// Shallow copy of prev q_gyro
 	float temp_q_f32[4];
-	temp_q_f32[0] = quat[0];
-	temp_q_f32[1] = quat[1];
-	temp_q_f32[2] = quat[2];
-	temp_q_f32[3] = quat[3];
+	temp_q_f32[0] = q_true_f32[0];
+	temp_q_f32[1] = q_true_f32[1];
+	temp_q_f32[2] = q_true_f32[2];
+	temp_q_f32[3] = q_true_f32[3];
 
 	// Calculate new normalized quaternion
 	arm_quaternion_product_single_f32(temp_q_f32, delta_q_f32, quat); // q = q x delta_q
@@ -438,10 +438,10 @@ void updateGyroQuat(float timeDelta) {
 
 	// Shallow copy of prev q_gyro
 	float temp_q_f32[4];
-	temp_q_f32[0] = q_gyro_f32[0];
-	temp_q_f32[1] = q_gyro_f32[1];
-	temp_q_f32[2] = q_gyro_f32[2];
-	temp_q_f32[3] = q_gyro_f32[3];
+	temp_q_f32[0] = q_true_f32[0];
+	temp_q_f32[1] = q_true_f32[1];
+	temp_q_f32[2] = q_true_f32[2];
+	temp_q_f32[3] = q_true_f32[3];
 
 	// Calculate new normalized quaternion
 	arm_quaternion_product_single_f32(temp_q_f32, delta_q_f32, q_gyro_f32); // q = q x delta_q

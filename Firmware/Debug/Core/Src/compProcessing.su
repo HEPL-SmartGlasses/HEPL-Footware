@@ -1,4 +1,4 @@
-../Core/Src/compProcessing.c:343:6:euler_to_quaternion	136	static
+../Core/Src/compProcessing.c:343:6:euler_to_quaternion	144	static
 ../Core/Src/compProcessing.c:384:6:getAccelAngles	24	static
 ../Core/Src/compProcessing.c:423:6:updateGyroQuat	48	static
 ../Core/Src/compProcessing.c:451:6:updateAccelQuat	24	static

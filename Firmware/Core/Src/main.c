@@ -96,7 +96,7 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 
 // Needs ~0.5s delay when switching b/w XBees for some reason
-#define CTR_MOD 2
+#define CTR_MOD 5
 
 uint8_t sendCurrentPosition(uint8_t state) {
 	static int ctr = 0;
@@ -118,14 +118,15 @@ uint8_t sendCurrentPosition(uint8_t state) {
 //	uint32_t posX = *(int*)&pos.X;
 //	uint32_t posY = *(int*)&pos.Y;
 
-	uint32_t IMUX = *(int*)&pred.X; // x_est
-	uint32_t IMUY = *(int*)&corr.X; // Hx
-	uint32_t IMUZ = *(int*)&corr.Y; // Z - Hx
+	uint32_t IMUX = *(int*)&IMU0_data.G_Y;
+	uint32_t IMUY = *(int*)&IMU1_data.G_Y;
+	uint32_t IMUZ = *(int*)&IMU2_data.G_Y;
 
 	//Position tmp = {(float)ZUPT, 0,0};
 
 	float K_mag = (float)sqrt(K_gain.X*K_gain.X+K_gain.Y*K_gain.Y+K_gain.Z*K_gain.Z);
-	uint32_t quatW = *(int*)&opt.X; // x_opt
+	float g_avg = ((IMU0_data.G_Y+IMU1_data.G_Y+IMU2_data.G_Y)/2);
+	uint32_t quatW = *(int*)&g_avg; // x_opt
 
 	uint8_t data_buf[16];
 
@@ -208,11 +209,13 @@ int main(void)
 
   IMU_readSensorData(&IMU0, &IMU0_data);
   IMU_readSensorData(&IMU1, &IMU1_data);
+  IMU_readSensorData(&IMU2, &IMU2_data);
 
   HAL_Delay(500);
 
   IMU_readSensorData(&IMU0, &IMU0_data);
   IMU_readSensorData(&IMU1, &IMU1_data);
+  IMU_readSensorData(&IMU2, &IMU2_data);
 
   init_comp_processing(&IMU0_data, &IMU1_data);
 
@@ -230,7 +233,7 @@ int main(void)
 		  // Sample IMU Data
 		  IMU_readSensorData(&IMU0, &IMU0_data);
 		  IMU_readSensorData(&IMU1, &IMU1_data);
-		  //IMU_readSensorData(&IMU2, &IMU2_data);
+		  IMU_readSensorData(&IMU2, &IMU2_data);
 
 		  calculateCompCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
 
@@ -241,7 +244,7 @@ int main(void)
 
 	  if (periodic_tx_flag && new_data_flag) {
 
-		  uint8_t rx_byte1 = sendCurrentPosition(RUN_STATE);
+		  sendCurrentPosition(RUN_STATE);
 
 		  //TODO get a reset command
 	/*	  if (rx_byte1 == 0xAA) {
