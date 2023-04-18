@@ -1,9 +1,0 @@
-../Core/Src/IMU.c:110:7:IMU_convertAccel	0	static
-../Core/Src/IMU.c:117:7:IMU_convertGyro	0	static
-../Core/Src/IMU.c:173:6:IMU_chipSelect	8	static
-../Core/Src/IMU.c:177:6:IMU_chipRelease	8	static
-../Core/Src/IMU.c:138:19:IMU_readRegister	24	static,ignoring_inline_asm
-../Core/Src/IMU.c:124:6:IMU_readSensorData	32	static
-../Core/Src/IMU.c:157:19:IMU_writeRegister	16	static,ignoring_inline_asm
-../Core/Src/IMU.c:24:6:IMU_init	24	static
-../Core/Src/IMU.c:181:6:IMU_zero	32	static

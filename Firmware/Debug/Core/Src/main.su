@@ -1,8 +1,0 @@
-../Core/Src/main.c:459:13:MX_GPIO_Init	64	static
-../Core/Src/main.c:103:9:sendCurrentPosition	80	static
-../Core/Src/main.c:546:6:Error_Handler	0	static,ignoring_inline_asm
-../Core/Src/main.c:321:13:MX_SPI1_Init	8	static
-../Core/Src/main.c:361:13:MX_SPI3_Init	8	static
-../Core/Src/main.c:401:13:MX_TIM2_Init	64	static
-../Core/Src/main.c:276:6:SystemClock_Config	96	static
-../Core/Src/main.c:160:5:main	8	static

@@ -1,3 +1,0 @@
-../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/TransformFunctions/arm_bitreversal.c:42:6:arm_bitreversal_f32	28	static
-../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/TransformFunctions/arm_bitreversal.c:113:6:arm_bitreversal_q31	32	static
-../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/TransformFunctions/arm_bitreversal.c:184:6:arm_bitreversal_q15	24	static

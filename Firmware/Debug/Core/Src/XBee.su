@@ -1,3 +1,0 @@
-../Core/Src/XBee.c:69:9:XBeeChecksum	0	static
-../Core/Src/XBee.c:87:9:makeXBeeTXFrame	24	static
-../Core/Src/XBee.c:47:9:XBeeTransmitReceive	56	static,ignoring_inline_asm

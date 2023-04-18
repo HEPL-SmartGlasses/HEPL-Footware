@@ -25,7 +25,7 @@
 #include "IMU.h"
 #include "stm32l4xx_hal.h"
 #include <hueristicProcessing.h>
-#include "XBee.h"
+#include "xbee.h"
 
 /* USER CODE END Includes */
 
@@ -96,12 +96,13 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 
 // Needs ~0.5s delay when switching b/w XBees for some reason
-#define CTR_MOD 50
-#define comp 1
-#define glass 0
+//#define CTR_MOD 50
+//#define comp 1
+//#define glass 0
+uint8_t xbee_rx_buf[64];
 
 uint8_t sendCurrentPosition(uint8_t state) {
-	static int ctr = 0;
+//	static int ctr = 0;
 
 //	Position pos;
 //
@@ -136,17 +137,16 @@ uint8_t sendCurrentPosition(uint8_t state) {
 
 	//data_buf[8] = state;
 
-	uint8_t xbee_rx_buf[32];
 
 
+//	if (ctr == 0) {
+		XBeeTX(data_buf, TX_DATA_BUF_SZ, xbee_rx_buf, 0);
+		XBeeTX(data_buf, TX_DATA_BUF_SZ, xbee_rx_buf, 1);
+//	} else if (ctr == CTR_MOD/2){
+//		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, comp);
+//	}
 
-	if (ctr == 0) {
-		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, glass);
-	} else if (ctr == CTR_MOD/2){
-		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, comp);
-	}
-
-	ctr = (ctr + 1) % CTR_MOD;
+//	ctr = (ctr + 1) % CTR_MOD;
 
 	return xbee_rx_buf[0];
 }

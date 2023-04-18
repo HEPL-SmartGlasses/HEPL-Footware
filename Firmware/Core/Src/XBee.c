@@ -1,21 +1,16 @@
-/*
- * XBee.c
- *
- *  Created on: Apr 4, 2023
- *      Author: evanm
- */
+//
+// xbee.c - SPI driver for XBee over STM32
+// Maia Herrington (maiahe)
 
-#include "XBee.h"
+#include "xbee.h"
 
 // define which XBee you are
-#define FOOTBEE
+#define GLASSBEE
 
 // define addresses
 #define GLASSBEE_ADDR 0x0013A2004176EAC6
 #define FOOTBEE_ADDR 0x0013A2004185C377
-#define SPARE_FOOTBEE_ADDR 0x0013A200410822FF
 #define COMPBEE_ADDR 0x0013A2004176E7FD
-#define BROADCAST_ADDR 0x000000000000FFFF
 
 // and let the macros do the rest!
 #ifdef GLASSBEE
@@ -43,27 +38,6 @@ extern SPI_HandleTypeDef hspi3;
 // externs
 extern uint8_t xbee_rx_buf[32];
 extern uint16_t rx_size;
-
-uint8_t XBeeTransmitReceive(uint8_t* data_buf, uint8_t* xbee_rx_buf, uint8_t tx_data_size, uint8_t comp) {
-	uint8_t xbee_tx_buf[32];
-
-	uint8_t tx_size = makeXBeeTXFrame(XBEE_TRANSMIT_FRAME, 0x01, data_buf, tx_data_size, xbee_tx_buf, comp);
-
-	// Set CS
-	HAL_GPIO_WritePin(XBEE_CS_PORT, XBEE_CS_PIN, 0);
-
-	__disable_irq();
-
-	HAL_StatusTypeDef stat = HAL_SPI_TransmitReceive(XBEE_SPI_HANDLER, xbee_tx_buf, xbee_rx_buf, tx_size, 7);
-
-	__enable_irq();
-
-	// Clear CS
-	HAL_GPIO_WritePin(XBEE_CS_PORT, XBEE_CS_PIN, 1);
-
-	if (stat == HAL_OK) return 1;
-	return 0;
-}
 
 // Calculates a checksum for a given XBee frame
 uint8_t XBeeChecksum(uint8_t frame[], uint8_t frame_size)
@@ -95,7 +69,7 @@ uint8_t makeXBeeTXFrame
 )
 {
 	// only do 14 bytes of data to avoid exceeding 32-byte frame size
-	if (data_size > 16) { data_size = 16; }
+	if (data_size > 14) { data_size = 14; }
 
 	uint16_t frame_size = 0x0E + data_size;
 	uint32_t checksum = 0;
@@ -137,32 +111,69 @@ uint8_t makeXBeeTXFrame
 	return frame_size + 4;
 }
 
-/*void parseXbeeData(){
 
-	int i = 0;
-	while (xbee_rx_buf[i] != 0x7e) {
-		i++;
-	}
+// XBeeTX(): transmits a given payload
+//    Returns true if successful spi interaction
+//    Modifies nothing
+uint8_t XBeeTX
+(
+    uint8_t data[],
+    uint8_t data_size, // in bytes
+	uint8_t rx_buf[],
+	uint8_t comp
+)
+{
+	uint8_t frame[64];
+	uint8_t frame_size = makeXBeeTXFrame(XBEE_TRANSMIT_FRAME, 0x01, data, data_size, frame, comp);
+	HAL_GPIO_TogglePin(XBEE_CS_PORT, XBEE_CS_PIN);
+	HAL_StatusTypeDef stat = HAL_SPI_TransmitReceive(XBEE_SPI_HANDLER, frame, rx_buf, frame_size, 2);
+	HAL_GPIO_TogglePin(XBEE_CS_PORT, XBEE_CS_PIN);
 
-	int frame = xbee_rx_buf[i + 3];
-
-	if (frame != 0x90){
-		return;
-	}
-
-	int xInit = i + 15, yInit = i + 19, sInit = i + 23;
-	//int xEnd = 3, yEnd = 7, sEnd = 11;
-	int packetSize = 4;
-
-	int x = 0;
-	int y = 0;
-
-	for (int j = 0; j < packetSize; j++){
-		x |= xbee_rx_buf[xInit + j] << ((3-j)*8);
-		y |= xbee_rx_buf[yInit + j] << ((3-j)*8);
-		status |= xbee_rx_buf[sInit + j] << ((3-j)*8);
-
-	}
-
+	if (stat == HAL_OK) return 1;
+	return 0;
 }
-*/
+
+
+// Receive interrupt
+//void HAL_GPIO_EXTI_Callback(uint16_t pin)
+//{
+//	rx_size = 0;
+//	while (!HAL_GPIO_ReadPin(XBEE_ATTN_PORT, XBEE_ATTN_PIN))
+//	{
+//	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
+//		HAL_SPI_Receive(&hspi3, &xbee_rx_buf[rx_size], 1, 2);
+//		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 1);
+//		rx_size = (rx_size + 1) % 32;
+//	}
+//}
+
+
+// receives a given XBee command
+// must be called when interrupt on SPI3_ATTN is low
+// returns size of received packet
+// NOTE:
+// X = 4 bytes
+// Y = 4 bytes
+// State = 4 bytes
+uint8_t parseXBeeRXFrame
+(
+	uint8_t xbee_rx_buf[],
+	uint8_t rx_frame[]
+)
+{
+//  if (rx_size > 0)
+//  {
+//	  int i = 0;
+//	  int packet_size = 0;
+//	  for(i = 0; i < rx_size; i++)
+//	  {
+//		  if (xbee_rx_buf[i] == 0x7e)
+//		  {
+//			  packet_size = (xbee_rx_buf[i+1] << 8) + xbee_rx_buf[i+2];
+//		  }
+//	  }
+//  }
+	return 0;
+}
+
+

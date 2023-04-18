@@ -1,3 +1,0 @@
-../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/TransformFunctions/arm_cfft_q31.c:726:6:arm_cfft_radix4by2_q31	56	static
-../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/TransformFunctions/arm_cfft_q31.c:787:6:arm_cfft_radix4by2_inverse_q31	56	static
-../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Source/TransformFunctions/arm_cfft_q31.c:669:6:arm_cfft_q31	16	static

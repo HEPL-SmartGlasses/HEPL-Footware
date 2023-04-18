@@ -75,8 +75,8 @@ all: main-build
 main-build: HEPL-Footware.elf secondary-outputs
 
 # Tool invocations
-HEPL-Footware.elf HEPL-Footware.map: $(OBJS) $(USER_OBJS) C:\Users\evanm\Documents\Michigan\eecs373\Project\HEPL-Footware\Firmware\STM32L443CCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "HEPL-Footware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\evanm\Documents\Michigan\eecs373\Project\HEPL-Footware\Firmware\STM32L443CCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HEPL-Footware.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+HEPL-Footware.elf HEPL-Footware.map: $(OBJS) $(USER_OBJS) C:\Users\Wormface\Desktop\University\ of\ Michigan\Academics\10.\ Winter\ 2023\EECS\ 373\Project\HEPL-Footware\Firmware\STM32L443CCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "HEPL-Footware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Wormface\Desktop\University of Michigan\Academics\10. Winter 2023\EECS 373\Project\HEPL-Footware\Firmware\STM32L443CCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HEPL-Footware.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
