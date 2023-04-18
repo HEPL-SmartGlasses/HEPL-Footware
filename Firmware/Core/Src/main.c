@@ -36,7 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TX_DATA_BUF_SZ 16
+#define TX_DATA_BUF_SZ 12
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -51,8 +51,6 @@ SPI_HandleTypeDef hspi3;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-
-SPI_HandleTypeDef XBEE_SPI;
 
 IMU IMU0;
 IMU IMU1;
@@ -98,7 +96,9 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 
 // Needs ~0.5s delay when switching b/w XBees for some reason
-#define CTR_MOD 5
+#define CTR_MOD 50
+#define comp 1
+#define glass 0
 
 uint8_t sendCurrentPosition(uint8_t state) {
 	static int ctr = 0;
@@ -119,17 +119,16 @@ uint8_t sendCurrentPosition(uint8_t state) {
 
 	//Position tmp = {(float)ZUPT, 0,0};
 
-	float g_avg = ((IMU0_data.G_Y+IMU1_data.G_Y+IMU2_data.G_Y)/2);
 	uint32_t head = *(int*)&heading; // x_opt
 
 	uint8_t data_buf[12];
 
 	int i;
 	for (i = 0; i < 3; ++i) {
-	  data_buf[i] = (IMUX >> (3-i)*8) & 0xFF;
+	  data_buf[i] = (POSX >> (3-i)*8) & 0xFF;
 	}
 	for (i = 0; i < 3; ++i) {
-	  data_buf[i+4] = (IMUY >> (3-i)*8) & 0xFF;
+	  data_buf[i+4] = (POSY >> (3-i)*8) & 0xFF;
 	}
 	for (i = 0; i < 3; ++i) {
 	  data_buf[i+8] = (head >> (3-i)*8) & 0xFF;
@@ -139,11 +138,13 @@ uint8_t sendCurrentPosition(uint8_t state) {
 
 	uint8_t xbee_rx_buf[32];
 
+
+
 	if (ctr == 0) {
-		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, COMPUTER_ADDR);
-	} /*else if (ctr == CTR_MOD/2){
-		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, GLASSBEE_ADDR);
-	}*/
+		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, glass);
+	} else if (ctr == CTR_MOD/2){
+		XBeeTransmitReceive(data_buf, xbee_rx_buf, TX_DATA_BUF_SZ, comp);
+	}
 
 	ctr = (ctr + 1) % CTR_MOD;
 
@@ -189,8 +190,6 @@ int main(void)
       /* Starting Error */
       Error_Handler();
   }
-
-  XBEE_SPI = hspi3;
 
   IMU_init(&hspi1, &IMU0, 0);
   IMU_init(&hspi1, &IMU1, 1);
@@ -265,8 +264,6 @@ int main(void)
 		  periodic_tx_flag = 0;
 		  new_data_flag = 0;
 	  }
-
-
 
   }
   /* USER CODE END 3 */
