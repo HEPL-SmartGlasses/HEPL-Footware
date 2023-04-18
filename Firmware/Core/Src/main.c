@@ -24,7 +24,7 @@
 
 #include "IMU.h"
 #include "stm32l4xx_hal.h"
-#include "compProcessing.h"
+#include <hueristicProcessing.h>
 #include "XBee.h"
 
 /* USER CODE END Includes */
@@ -73,6 +73,8 @@ volatile uint8_t new_data_flag = 0;
 
 const uint8_t IS_COMP_FILTER = 1;
 
+volatile int calibrated = 0;
+
 enum STATE {
 		RESET_STATE,
 		RUN_STATE
@@ -105,30 +107,22 @@ uint8_t sendCurrentPosition(uint8_t state) {
 //
 //	returnCurrentPosition(&pos);
 
-	Position corr;
-	Position pred;
-	Position opt;
-	Position K_gain;
-	Position w_avg;
-	Quaternion quat;
-	Position ZUPT;
+	Position pos;
 
-	returnCompDebugOutput(&corr, &pred, &opt, &K_gain, &w_avg, &quat, &ZUPT);
+	float heading = returnCurrentPosition(&pos);
 
 //	uint32_t posX = *(int*)&pos.X;
 //	uint32_t posY = *(int*)&pos.Y;
 
-	uint32_t IMUX = *(int*)&IMU0_data.G_Y;
-	uint32_t IMUY = *(int*)&IMU1_data.G_Y;
-	uint32_t IMUZ = *(int*)&IMU2_data.G_Y;
+	uint32_t POSX = *(int*)&pos.X;
+	uint32_t POSY = *(int*)&pos.Y;
 
 	//Position tmp = {(float)ZUPT, 0,0};
 
-	float K_mag = (float)sqrt(K_gain.X*K_gain.X+K_gain.Y*K_gain.Y+K_gain.Z*K_gain.Z);
 	float g_avg = ((IMU0_data.G_Y+IMU1_data.G_Y+IMU2_data.G_Y)/2);
-	uint32_t quatW = *(int*)&g_avg; // x_opt
+	uint32_t head = *(int*)&heading; // x_opt
 
-	uint8_t data_buf[16];
+	uint8_t data_buf[12];
 
 	int i;
 	for (i = 0; i < 3; ++i) {
@@ -138,10 +132,7 @@ uint8_t sendCurrentPosition(uint8_t state) {
 	  data_buf[i+4] = (IMUY >> (3-i)*8) & 0xFF;
 	}
 	for (i = 0; i < 3; ++i) {
-	  data_buf[i+8] = (IMUZ >> (3-i)*8) & 0xFF;
-	}
-	for (i = 0; i < 3; ++i) {
-	  data_buf[i+12] = (quatW >> (3-i)*8) & 0xFF;
+	  data_buf[i+8] = (head >> (3-i)*8) & 0xFF;
 	}
 
 	//data_buf[8] = state;
@@ -217,29 +208,43 @@ int main(void)
   IMU_readSensorData(&IMU1, &IMU1_data);
   IMU_readSensorData(&IMU2, &IMU2_data);
 
-  init_comp_processing(&IMU0_data, &IMU1_data);
+  init_heuristic_processing(&IMU0_data, &IMU1_data, &IMU2_data);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
 	  if (DRDY_flag || periodic_tx_flag) {
 
-		  // Sample IMU Data
-		  IMU_readSensorData(&IMU0, &IMU0_data);
-		  IMU_readSensorData(&IMU1, &IMU1_data);
-		  IMU_readSensorData(&IMU2, &IMU2_data);
+		 // if (calibrated) {
+			  // Sample IMU Data
+			  IMU_readSensorData(&IMU0, &IMU0_data);
+			  IMU_readSensorData(&IMU1, &IMU1_data);
+			  IMU_readSensorData(&IMU2, &IMU2_data);
 
-		  calculateCompCorrectedState(&IMU0_data, &IMU1_data, timeDelta);
+			  calculatePosition(&IMU0_data, &IMU1_data, &IMU2_data, timeDelta);
 
-		  DRDY_flag = 0;
+			  DRDY_flag = 0;
 
-		  new_data_flag = 1;
+			  new_data_flag = 1;
+		 /* } else {
+			  // Sample IMU Data
+			  IMU_readSensorData(&IMU0, &IMU0_data);
+			  IMU_readSensorData(&IMU1, &IMU1_data);
+			  IMU_readSensorData(&IMU2, &IMU2_data);
+
+			  calibrate(&IMU0_data, &IMU1_data, &IMU2_data, timeDelta);
+
+			  DRDY_flag = 0;
+		  }*/
+
 	  }
 
 	  if (periodic_tx_flag && new_data_flag) {
@@ -260,6 +265,9 @@ int main(void)
 		  periodic_tx_flag = 0;
 		  new_data_flag = 0;
 	  }
+
+
+
   }
   /* USER CODE END 3 */
 }

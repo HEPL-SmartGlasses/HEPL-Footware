@@ -10,8 +10,8 @@
 extern const uint8_t IS_COMP_FILTER;
 
 float IMU_offsets[9] = {
-		-0.2,0,0.3,
-		0,0,0.2373,
+		0,0,0,
+		0,0,0,
 		0,0,0,
 };
 float IMU_Goffsets[9] = {
